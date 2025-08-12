@@ -6,3 +6,4 @@ shaders/*.spv
 renderdoc/
 .cache/
 imgui.ini
+compile_flags.txt
