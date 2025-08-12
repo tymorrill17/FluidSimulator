@@ -1,20 +1,32 @@
 #include "renderer/swapchain.h"
 
-void Swapchain::createSwapchain() {
-	static Logger& logger = Logger::getLogger();
+Swapchain::Swapchain(Device& device, Window& window) :
+    _device(device),
+    _window(window),
+    _swapchain(VK_NULL_HANDLE),
+    _imageIndex(0),
+    _resizeRequested(false) {
+        createSwapchain();
+}
 
-	// Query swapchain support details and set the extent to the same as the window
+Swapchain::~Swapchain() {
+    cleanup();
+}
+
+void Swapchain::createSwapchain() {
+
+	// Query swapchain support details
 	_supportDetails = querySwapchainSupport(_device.physicalDevice(), _window.surface());
-	_extent = setSwapchainExtent(_supportDetails.capabilities, _window);
 
 	// Select the format and present modes of the swapchain
 	VkSurfaceFormatKHR surfaceFormat = selectSwapchainSurfaceFormat(_supportDetails.formats);
 	VkPresentModeKHR presentMode = selectSwapchainPresentMode(_supportDetails.presentModes);
 
+    _extent = setSwapchainExtent(_supportDetails.capabilities, _window);
 	_imageFormat = surfaceFormat.format;
+    _framesInFlight = _supportDetails.capabilities.minImageCount + 1; // Set how many images will be in the swapchain. Typically this will be 2.
 
-	// Set how many images will be in the swapchain. Typically this will be 2.
-	_framesInFlight = _supportDetails.capabilities.minImageCount + 1;
+    // Cap the frames in flight to the max swapchain image count
 	if (_supportDetails.capabilities.maxImageCount > 0 && _framesInFlight > _supportDetails.capabilities.maxImageCount)
 		_framesInFlight = _supportDetails.capabilities.maxImageCount;
 
@@ -33,10 +45,11 @@ void Swapchain::createSwapchain() {
 		.clipped = VK_TRUE,
 	};
 
-	// Determine how to handle images across queue families
+    // Get graphics and present queue indices
 	const QueueFamilyIndices indices = _device.queueFamilyIndices();
 	uint32_t queueFamilyIndies[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
+    // Determine how to handle images across queue families
 	// Are there >1 queue families?
 	if (indices.graphicsFamily != indices.presentFamily) {
 		// If so, use concurrent mode. It is faster to transfer since no queue families own the image
@@ -55,15 +68,15 @@ void Swapchain::createSwapchain() {
 		throw std::runtime_error("Failed to create swapchain!");
 	}
 
-	logger.print("Swapchain successfully created!");
+    std::cout << "Swapchain successfully created!" << std::endl;
 
-	std::vector<VkImage> images;
 	// Get the new swapchain's images
+    std::vector<VkImage> images;
 	vkGetSwapchainImagesKHR(_device.device(), _swapchain, &_framesInFlight, nullptr);
 	images.resize(_framesInFlight);
 	vkGetSwapchainImagesKHR(_device.device(), _swapchain, &_framesInFlight, images.data());
 
-	// Now fill the _images vector, which creates the image views
+	// Now fill the _images vector, which creates the image views through the Image constructor
 	_images.reserve(_framesInFlight);
 	VkExtent3D swapchainImageExtent{ _extent.width, _extent.height, 1 };
 	for (VkImage image : images) {
@@ -71,51 +84,45 @@ void Swapchain::createSwapchain() {
 	}
 }
 
-Swapchain::Swapchain(const Device& device, Window& window)
-	: _swapchain(VK_NULL_HANDLE),
-	_extent{0, 0}, _device(device),
-	_window(window), _imageFormat(),
-	_imageIndex(0), _resizeRequested(false) {
-	createSwapchain();
-}
-
 void Swapchain::cleanup() {
 	vkDestroySwapchainKHR(_device.device(), _swapchain, nullptr);
 	_images.clear();
 }
 
-Swapchain::~Swapchain() {
-	cleanup();
-}
 
 void Swapchain::recreate() {
 	vkDeviceWaitIdle(_device.device()); // Wait for device to finish its tasks
 	cleanup(); // Destroy old swapchain
-	_window.updateSize(); // Update the window's extent (Maybe should move this elsewhere
 	createSwapchain(); // Recreate the swapchain
 	_resizeRequested = false;
 }
 
-VkSurfaceFormatKHR Swapchain::selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
-	// Try to find support for 8-bit SRGB color format
-	for (const auto& format : availableFormats) {
-		if (format.format == VK_FORMAT_R8G8B8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-			return format;
-		}
-	}
-	// Otherwise, default to the first available
-	return availableFormats[0];
+void Swapchain::acquireNextImage(Semaphore* semaphore, Fence* fence) {
+    VkResult e = vkAcquireNextImageKHR(_device.device(), _swapchain, 1000000000, semaphore->handle(), nullptr, &_imageIndex);
+    if (e == VK_ERROR_OUT_OF_DATE_KHR) { // This is a point of entry for the information that the window has been resized.
+        _resizeRequested = true;
+    } else if(e != VK_SUCCESS) {
+        throw std::runtime_error("Failed to acquire next swapchain image!");
+    }
 }
 
-VkPresentModeKHR Swapchain::selectSwapchainPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
-	// Try to find MAILBOX present mode
-	for (const auto& mode : availablePresentModes) {
-		if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
-			return mode;
-		}
-	}
-	// Otherwise, default to FIFO mode
-	return VK_PRESENT_MODE_FIFO_KHR;
+void Swapchain::presentToScreen(VkQueue queue, Frame& frame, uint32_t imageIndex) {
+    VkSemaphore waitSemaphore = frame.renderSemaphore().handle();
+    VkPresentInfoKHR presentInfo{
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .pNext = nullptr,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &waitSemaphore,
+            .swapchainCount = 1,
+            .pSwapchains = &_swapchain,
+            .pImageIndices = &imageIndex
+    };
+    VkResult e = vkQueuePresentKHR(queue, &presentInfo);
+    if (e == VK_ERROR_OUT_OF_DATE_KHR || e == VK_SUBOPTIMAL_KHR) { // This is a point of entry for the information that the window has been resized.
+        _resizeRequested = true;
+    } else if (e != VK_SUCCESS) {
+        throw std::runtime_error("Failed to present to screen!");
+    }
 }
 
 SwapchainSupportDetails Swapchain::querySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
@@ -160,30 +167,25 @@ VkExtent2D Swapchain::setSwapchainExtent(VkSurfaceCapabilitiesKHR capabilities, 
 	}
 }
 
-void Swapchain::acquireNextImage(Semaphore* semaphore, Fence* fence) {
-	VkResult e = vkAcquireNextImageKHR(_device.device(), _swapchain, 1000000000, semaphore->handle(), nullptr, &_imageIndex);
-	if (e == VK_ERROR_OUT_OF_DATE_KHR) {
-		_resizeRequested = true;
-	} else if(e != VK_SUCCESS) {
-		throw std::runtime_error("Failed to acquire next swapchain image!");
-	}
+VkSurfaceFormatKHR Swapchain::selectSwapchainSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+    // Try to find support for 8-bit SRGB color format
+    for (const auto& format : availableFormats) {
+        if (format.format == VK_FORMAT_R8G8B8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return format;
+        }
+    }
+    // Otherwise, default to the first available
+    return availableFormats[0];
 }
 
-void Swapchain::presentToScreen(VkQueue queue, Frame& frame, uint32_t imageIndex) {
-	VkSemaphore waitSemaphore = frame.renderSemaphore().handle();
-	VkPresentInfoKHR presentInfo{
-		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-		.pNext = nullptr,
-		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = &waitSemaphore,
-		.swapchainCount = 1,
-		.pSwapchains = &_swapchain,
-		.pImageIndices = &imageIndex
-	};
-	VkResult e = vkQueuePresentKHR(queue, &presentInfo);
-	if (e == VK_ERROR_OUT_OF_DATE_KHR || e == VK_SUBOPTIMAL_KHR) {
-		_resizeRequested = true;
-	} else if (e != VK_SUCCESS) {
-		throw std::runtime_error("Failed to present to screen!");
-	}
+VkPresentModeKHR Swapchain::selectSwapchainPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+    // Try to find MAILBOX present mode
+    for (const auto& mode : availablePresentModes) {
+        if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+            return mode;
+        }
+    }
+    // Otherwise, default to FIFO mode
+    return VK_PRESENT_MODE_FIFO_KHR;
 }
+

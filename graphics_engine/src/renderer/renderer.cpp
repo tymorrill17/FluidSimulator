@@ -130,6 +130,7 @@ void Renderer::renderAllSystems() {
 
 void Renderer::resizeCallback() {
 	if (_swapchain.resizeRequested()) {
+        _window.updateSize();
 		_swapchain.recreate();
 		_drawImage.recreate({ _window.extent().width, _window.extent().height, 1 });
 	}
