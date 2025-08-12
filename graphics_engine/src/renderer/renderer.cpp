@@ -1,7 +1,7 @@
 #include "renderer/renderer.h"
 
 Renderer::Renderer(Window& window) :
-	_window(window), 
+	_window(window),
 	_instance("EngineTest", "VulkanEngineV2", true),
 	_debugMessenger(_instance),
 	_device(_instance, _window, Instance::deviceExtensions),
@@ -21,8 +21,6 @@ Renderer::Renderer(Window& window) :
 	for (int i = 0; i < _frames.capacity(); i++) {
 		_frames.emplace_back(std::move(_device));
 	}
-
-	_aspectRatio = float(_window.extent().width) / float(_window.extent().height);
 
 	// Camera data will be sent using a uniform buffer (or push constants... need to refresh my knowledge of them)
 
@@ -70,10 +68,10 @@ void Renderer::renderAllSystems() {
 	Command& cmd = getCurrentFrame().command();
 	cmd.reset(); // Reset before adding more commands to be safe
 	cmd.begin(); // Begin the command buffer
-	
+
 	// Transition the draw image to a writable format
 	_drawImage.transitionImage(cmd, VK_IMAGE_LAYOUT_GENERAL);
-	
+
 	// Now the rendering info struct needs to be filled with the leftover info that the renderpass usually handles
 	VkClearValue clearColorValue{ .color{ 0.0f, 0.0f, 0.0f, 1.0f } };
 	VkRenderingAttachmentInfoKHR colorAttachmentInfo = Image::attachmentInfo(_drawImage.imageView(), &clearColorValue, VK_IMAGE_LAYOUT_GENERAL);
@@ -126,7 +124,7 @@ void Renderer::renderAllSystems() {
 	cmd.end();
 	cmd.submitToQueue(_device.graphicsQueue(), getCurrentFrame()); // Submit the command buffer
 	_swapchain.presentToScreen(_device.presentQueue(), getCurrentFrame(), _swapchain.imageIndex()); // Present to screen
-	
+
 	_frameNumber++;
 }
 
@@ -134,7 +132,6 @@ void Renderer::resizeCallback() {
 	if (_swapchain.resizeRequested()) {
 		_swapchain.recreate();
 		_drawImage.recreate({ _window.extent().width, _window.extent().height, 1 });
-		_aspectRatio = float(_window.extent().width) / float(_window.extent().height);
 	}
 }
 

@@ -5,8 +5,7 @@ void ParticleRenderSystem::buildPipeline() {
 	_renderer.pipelineBuilder().clear();
 
 	std::string baseDir = static_cast<std::string>(BASE_DIR);
-	std::string projectName = "fluid_sim";
-	std::string folderDir = baseDir + "\\" + projectName + "\\shaders\\";
+	std::string folderDir = baseDir + "\\shaders\\";
 
 	Shader defaultVertShader(_renderer.device(), folderDir + "circle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	Shader defaultFragShader(_renderer.device(), folderDir + "circle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -28,7 +27,7 @@ void ParticleRenderSystem::buildPipeline() {
 }
 
 ParticleRenderSystem::ParticleRenderSystem(Renderer& renderer, std::vector<VkDescriptorSetLayout> particleDescriptorLayout, std::vector<VkDescriptorSet> particleDescriptorSets, ParticleSystem2D& particleSystem) :
-	RenderSystem(renderer), 
+	RenderSystem(renderer),
 	_particleDescriptors(particleDescriptorLayout),
 	_particleSet(particleDescriptorSets),
 	_particleSystem(particleSystem) {

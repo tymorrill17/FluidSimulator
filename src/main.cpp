@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
 				});
 
 			// Set the camera projection with the current aspect ratio
-			float aspect = app->renderer().aspectRatio();
+			float aspect = app->window().aspectRatio();
 			box.left = -aspect * coordinateScale; box.right = aspect * coordinateScale;
 			box.bottom = -1.0f * coordinateScale; box.top = 1.0f * coordinateScale;
 			//camera.setOrthographicProjection(-aspect, aspect, -1.0f, 1.0f, 0.1f, 10.0f);
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
 			camera.setViewDirection(glm::vec3{ 0.0f, 0.0f, -2.0f }, glm::vec3{ 0.0f, 0.0f, 1.0f });
 
 			// Update camera info in the global buffer
-			globalBufferObject.aspectRatio = app->renderer().aspectRatio();
+			globalBufferObject.aspectRatio = aspect;
 			globalBufferObject.projection = camera.projectionMatrix();
 			globalBufferObject.view = camera.viewMatrix();
 

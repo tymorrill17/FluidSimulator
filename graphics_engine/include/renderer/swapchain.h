@@ -49,7 +49,7 @@ public:
 	static SwapchainSupportDetails querySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 	// @brief Sets the swapchain extent based on the current window size
-	static VkExtent2D setSwapchainExtent(VkSurfaceCapabilitiesKHR capabilities, const Window& window);
+	static VkExtent2D setSwapchainExtent(VkSurfaceCapabilitiesKHR capabilities, Window& window);
 
 private:
 	const Device& _device;
@@ -71,7 +71,7 @@ private:
 	// @brief The index of the current swapchain image being rendered to
 	uint32_t _imageIndex;
 
-	bool _resizeRequested; 
+	bool _resizeRequested;
 
 	void createSwapchain();
 	void cleanup();

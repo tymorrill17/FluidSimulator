@@ -71,7 +71,7 @@ void Swapchain::createSwapchain() {
 	}
 }
 
-Swapchain::Swapchain(const Device& device, Window& window) 
+Swapchain::Swapchain(const Device& device, Window& window)
 	: _swapchain(VK_NULL_HANDLE),
 	_extent{0, 0}, _device(device),
 	_window(window), _imageFormat(),
@@ -143,7 +143,7 @@ SwapchainSupportDetails Swapchain::querySwapchainSupport(VkPhysicalDevice device
 	return details;
 }
 
-VkExtent2D Swapchain::setSwapchainExtent(VkSurfaceCapabilitiesKHR capabilities, const Window& window) {
+VkExtent2D Swapchain::setSwapchainExtent(VkSurfaceCapabilitiesKHR capabilities, Window& window) {
 
 	// In Vulkan, an extent of size UINT32_MAX means the window resolution should be used
 	if (capabilities.currentExtent.width != UINT32_MAX) {
@@ -155,7 +155,7 @@ VkExtent2D Swapchain::setSwapchainExtent(VkSurfaceCapabilitiesKHR capabilities, 
 		// Truncates the extent to within the surface capabilities
 		actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
 		actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
-		
+
 		return actualExtent;
 	}
 }

@@ -2,13 +2,13 @@
 
 Window::Window(glm::ivec2 dimensions, const std::string& name) :
 	_windowExtent{ static_cast<uint32_t>(dimensions.x), static_cast<uint32_t>(dimensions.y) },
-	_name(name), _instance(VK_NULL_HANDLE),
+	_name(name),
+    _instance(VK_NULL_HANDLE),
 	_surface(VK_NULL_HANDLE),
 	_windowShouldClose(false),
 	_pauseRendering(false),
 	_isFullscreen(false) {
 
-	static Logger& logger = Logger::getLogger();
 	// Initialize SDL
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -23,10 +23,10 @@ Window::Window(glm::ivec2 dimensions, const std::string& name) :
 		windowFlags
 	);
 
+    _aspectRatio = float(_windowExtent.width) / float(_windowExtent.height);
+
 	if (window) {
-		std::stringstream line;
-		line << "Created a window titled \"" << name << "\" of size " << _windowExtent.width << "x" << _windowExtent.height << ".";
-		logger.print(line.str());
+        std::cout << "Created a window titled \"" << name << "\" of size " << _windowExtent.width << "x" << _windowExtent.height << "." << std::endl;
 	}
 	else {
 		throw std::runtime_error("Window creation failure!");
@@ -40,18 +40,6 @@ Window::~Window() {
 		vkDestroySurfaceKHR(_instance, _surface, nullptr);
 	}
 	SDL_DestroyWindow(_window);
-}
-
-Window::Window(Window&& other) noexcept : 
-	_window(other._window), _windowExtent(other._windowExtent),
-	_name(std::move(other._name)), _surface(other._surface),
-	_instance(other._instance), _windowShouldClose(other._windowShouldClose),
-	_pauseRendering(other._pauseRendering), _isFullscreen(other._isFullscreen) {
-	other._window = nullptr;
-	other._windowExtent = { 0, 0 };
-	other._name.clear();
-	other._surface = VK_NULL_HANDLE;
-	other._instance = VK_NULL_HANDLE;
 }
 
 void Window::getRequiredInstanceExtensions(std::vector<const char*>& extensions) {
@@ -68,10 +56,10 @@ void Window::updateSize() {
 	SDL_GetWindowSize(_window, &width, &height);
 	_windowExtent.width = width;
 	_windowExtent.height = height;
+    _aspectRatio = float(_windowExtent.width) / float(_windowExtent.height);
 }
 
 void Window::createSurface(VkInstance instance) {
-	static Logger& logger = Logger::getLogger();
 
 	_instance = instance;
 
@@ -79,5 +67,5 @@ void Window::createSurface(VkInstance instance) {
 		throw std::runtime_error("Failed to create window surface!");
 	}
 
-	logger.print("Created SDL window surface for Vulkan");
+	std::cout << "Created SDL window surface for Vulkan" << std::endl;
 }

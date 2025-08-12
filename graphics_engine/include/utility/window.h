@@ -3,63 +3,54 @@
 #include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 #include <glm/vec2.hpp>
-#include "renderer/instance.h"
-#include "utility/logger.h"
 #include "NonCopyable.h"
 #include <string>
 #include <vector>
-#include "imgui/imgui.h"
+#include <iostream>
 #include "imgui/imgui_impl_sdl2.h"
-#include "imgui/imgui_impl_vulkan.h"
-#include <sstream>
 
 // @brief Contains the window that will display the application
 class Window : public NonCopyable {
 public:
-	// @brief Constructor for a window. Creates an SDL_Window object and initializes SDL
-	// 
-	// @param width - Width of the window
-	// @param height - Height of the window
+	// @brief Creates an SDL_Window object and initializes SDL
+	// @param dimensions - dimensions of window extent
 	// @param name - Name for the created window
 	Window(glm::ivec2 dimensions, const std::string &name);
 
 	// @brief Destroys the SDL_Window
 	~Window();
 
-	Window(Window&& other) noexcept;
+    // @brief Gets the window size after being resized
+    void updateSize();
 
-	inline VkExtent2D extent() const { return _windowExtent; }
-	inline const struct SDL_Window* SDL_window() const { return _window; }
-	inline struct SDL_Window* SDL_window() { return _window; }
-	inline VkSurfaceKHR surface() const { return _surface; }
+    // @brief Get the required Vulkan extensions that the window system requires
+    // @param extensions - Populated with the required extensions
+    static void getRequiredInstanceExtensions(std::vector<const char*>& extensions);
 
-	inline bool shouldClose() const { return _windowShouldClose; }
+    // @brief Create the Vulkan surface that will communicate with the SDL window. Called in Device constructor
+    // @param instance - Vulkan instance to associate the surface with
+    void createSurface(VkInstance instance);
+
+    // @brief Signals that the window should close
 	void closeWindow() { _windowShouldClose = true; }
 
-	inline bool pauseRendering() const { return _pauseRendering; }
-	inline void setPauseRendering(bool value) { _pauseRendering = value; }
-	
-	inline bool isFullscreen() const { return _isFullscreen; }
+    // @brief Set whether the rendering loop should be paused or not
+    inline void setPauseRendering(bool value) { _pauseRendering = value; }
+
+    // @brief Set whether the window should go fullscreen or not
 	inline void setFullscreen(bool value) { _isFullscreen = value; }
 
-	// @brief Gets the current window size after resizing
-	void updateSize();
-
-	// @brief Get the required Vulkan extensions that the window system requires
-	//
-	// @param extensions - Populated with the required extensions
-	static void getRequiredInstanceExtensions(std::vector<const char*>& extensions);
-
-	// @brief Create the Vulkan surface that will communicate with the SDL window. Also sets the Instance pointer member in the Window object. Called in Device constructor
-	//
-	// @param instance - Vulkan instance to connect the surface with
-	void createSurface(VkInstance instance);
+    inline VkExtent2D extent() { return _windowExtent; }
+    inline float aspectRatio() { return _aspectRatio; }
+    inline struct SDL_Window* SDL_window() { return _window; }
+    inline VkSurfaceKHR surface() { return _surface; }
+    inline bool shouldClose() { return _windowShouldClose; }
+    inline bool pauseRendering() { return _pauseRendering; }
+    inline bool isFullscreen() { return _isFullscreen; }
 
 private:
 	struct SDL_Window* _window;
 	VkExtent2D _windowExtent;
-
-	// @brief Name of the window
 	std::string _name;
 
 	// @brief the Vulkan surface associated with the window
@@ -67,6 +58,8 @@ private:
 
 	// @brief VkInstance only needed to create a surface.
 	VkInstance _instance;
+
+    float _aspectRatio;
 
 	bool _windowShouldClose;
 	bool _pauseRendering;

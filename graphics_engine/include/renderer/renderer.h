@@ -1,70 +1,76 @@
 #pragma once
-#include "vulkan/vulkan.h"
 #include "NonCopyable.h"
 #include "utility/allocator.h"
 #include "utility/debug_messenger.h"
-#include "shader.h"
 #include "pipeline_builder.h"
 #include "swapchain.h"
 #include "image.h"
 #include "descriptor.h"
 #include "render_systems/render_system.h"
-#include <string>
 
 class Swapchain;
 class AllocatedImage;
 
 class Renderer : public NonCopyable {
 public:
-	// @brief Construct and initialize the Vulkan 
+	// @brief Construct and initialize the Vulkan
+    // @param window - reference to a window object that will be rendered to and will provide input data
 	Renderer(Window& window);
 
-	// @brief Destroy engine instance and clean up allocations
-	~Renderer() = default;
-
-	// @brief Renders each RenderSystem to the frame and presents it
+	// @brief Renders each RenderSystem to the frame and presents it.
+    // Each type of thing that will be rendered will be part of some render system
 	void renderAllSystems();
 
 	// @brief Handles changes that need to be made when the window is resized
 	void resizeCallback();
 
 	// @brief Adds renderSystem to the end of the renderSystems list
-	// 
-	// @param renderSystem - render system to add to the Renderer's list
+    // @param renderSystem - pointer to a render system to add
 	// @return Returns the Renderer handle in order to chain together adds
 	Renderer& addRenderSystem(RenderSystem* renderSystem);
 
-	// @brief Gets the current frame by finding frameNumber % swapchain.framesInFlight
+	// @brief Gets the frame object of the current frame by finding frameNumber % swapchain.framesInFlight
+    // @return Frame object at current frame
 	Frame& getCurrentFrame();
 
+    // @brief Gets the frame object at the given index
+    // @param frame index (must be < swapchain.framesInFlight
+    // @return Frame object at index
 	Frame& getFrame(int index);
 
+    // @brief Waits for the device to be idle
 	void waitForIdle();
 
-	const inline Device& device() const { return _device; }
+	inline Device& device() { return _device; }
 	inline Swapchain& swapchain() { return _swapchain; }
 	inline Instance& instance() { return _instance; }
 	inline PipelineBuilder& pipelineBuilder() { return _pipelineBuilder; }
 	inline DescriptorLayoutBuilder& descriptorLayoutBuilder() { return _descriptorLayoutBuilder; }
 	inline DescriptorWriter& descriptorWriter() { return _descriptorWriter; }
-	const inline Allocator& allocator() const { return _allocator; }
-	const inline float aspectRatio() const { return _aspectRatio; }
+	inline Allocator& allocator() { return _allocator; }
 
 private:
-	Window& _window; // Main window to render to
-	Instance _instance;
-	DebugMessenger _debugMessenger; // Vulkan debug messenger callback for validation layers
-	Device _device; // Device object containing physical and logical devices
-	Allocator _allocator; // Allocator for buffers and images
-	Swapchain _swapchain; // The swapchain handles presenting images to the surface and thus to the window
-	PipelineBuilder _pipelineBuilder; // Pipeline builder object that abstracts and handles pipeline creation
+	Window& _window; // Main window to render to. It is a reference because the renderer does not create it.
+
+    // Everything else is created by the renderer and lives in the Renderer object
+	Instance _instance; // @brief Vulkan instance object
+    DebugMessenger _debugMessenger; // Vulkan debug messenger callback for validation layers
+	Device _device; // Vulkan device object containing physical and logical devices
+	Allocator _allocator; // VMA allocator for buffers and images
+	Swapchain _swapchain; // The swapchain handles presents draw images to the window
+	PipelineBuilder _pipelineBuilder; // Pipeline builder handles graphics and compute pipeline creation since that is tied to the renderer
+
+    // Frame data and draw image
 	std::vector<Frame> _frames; // Contains command buffers and sync objects for each frame in the swapchain
-	uint32_t _frameNumber; // Keeps track of the number of rendered frames
-	AllocatedImage _drawImage; // Image that gets rendered to then copied to the swapchain image
-	DescriptorLayoutBuilder _descriptorLayoutBuilder; // Builds descriptor set layouts
-	DescriptorWriter _descriptorWriter;
+	AllocatedImage _drawImage; // Image that gets rendered to then copied to the swapchain image(s)
 
-	float _aspectRatio;
+    // Descriptor sets
+	DescriptorLayoutBuilder _descriptorLayoutBuilder; // Build descriptor set layouts
+	DescriptorWriter _descriptorWriter; // Binds and writes descriptor layouts
 
-	std::vector<RenderSystem*> _renderSystems;
+    // Render systems dictate the nature of how objects that use them are rendered
+    std::vector<RenderSystem*> _renderSystems; // List of render systems that get called each frame
+
+    // Renderer statistics
+    uint32_t _frameNumber; // Keeps track of the number of rendered frames
 };
