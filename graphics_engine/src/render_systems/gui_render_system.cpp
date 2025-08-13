@@ -1,4 +1,5 @@
 #include "render_systems/gui_render_system.h"
+#include "render_systems/render_system.h"
 
 std::vector<PoolSizeRatio> poolSizes = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
 	{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -17,7 +18,7 @@ GuiRenderSystem::GuiRenderSystem(Renderer& renderer, Window& window) :
 	RenderSystem(renderer),
 	_window(window),
 	_descriptorPool(_renderer.device(), 1000, poolSizes) {
-	
+
 	// Initialize core structures of ImGui
 	ImGui::CreateContext();
 

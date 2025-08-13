@@ -1,11 +1,11 @@
 #include "renderer/pipeline_builder.h"
+#include <iostream>
 
 PipelineBuilder::PipelineBuilder(const Device& device) : _device(device) {
 	clear();
 }
 
 Pipeline PipelineBuilder::buildPipeline() {
-    static Logger& logger = Logger::getLogger();
 
     VkPipelineViewportStateCreateInfo viewportState{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -14,7 +14,7 @@ Pipeline PipelineBuilder::buildPipeline() {
         .scissorCount = 1
     };
 
-    // Setup dummy color blending. Not using transparent objects yet. 
+    // Setup dummy color blending. Not using transparent objects yet.
     VkPipelineColorBlendStateCreateInfo colorBlending{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         .pNext = nullptr,
@@ -23,7 +23,7 @@ Pipeline PipelineBuilder::buildPipeline() {
         .attachmentCount = 1,
         .pAttachments = &_config.colorBlendAttachment
     };
-    
+
     // Not used yet so just initialize it to default
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
@@ -64,7 +64,7 @@ Pipeline PipelineBuilder::buildPipeline() {
     }
 
     Pipeline newPipeline(&_device, vkPipeline, layout);
-    logger.print("Successfully Created Render Pipeline");
+    std::cout << "Successfully Created Render Pipeline!" << std::endl;
 
     return newPipeline;
 }

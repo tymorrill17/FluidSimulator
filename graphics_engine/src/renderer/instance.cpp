@@ -1,5 +1,5 @@
 #include "renderer/instance.h"
-#include <sstream>
+#include <iostream>
 
 std::vector<const char*> Instance::validationLayers = {
 	"VK_LAYER_KHRONOS_validation" // Standard validation layer preset
@@ -8,11 +8,10 @@ std::vector<const char*> Instance::deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME // Necessary extension to use swapchains
 };
 
-Instance::Instance(const char* appName, const char* engineName, bool enableValidationLayers) : 
+Instance::Instance(const char* appName, const char* engineName, bool enableValidationLayers) :
 	enableValidationLayers(enableValidationLayers),
 	instance(VK_NULL_HANDLE) {
 
-	static Logger& logger = Logger::getLogger();
 	if (enableValidationLayers && !checkValidationLayerSupport()) {
 		throw std::runtime_error("Validation layers requested, but are not supported!");
 	}
@@ -20,7 +19,7 @@ Instance::Instance(const char* appName, const char* engineName, bool enableValid
 	// Find version of Vulkan
 	uint32_t instanceVersion;
 	vkEnumerateInstanceVersion(&instanceVersion);
-	logger.reportVersion(instanceVersion);
+    Logger::reportVersion(instanceVersion);
 
 	// User-specified info about application
 	VkApplicationInfo appInfo{
@@ -62,7 +61,7 @@ Instance::Instance(const char* appName, const char* engineName, bool enableValid
 		throw std::runtime_error("Failed to create a Vulkan instance!");
 	}
 
-	logger.print("Created Vulkan instance.");
+    std::cout << "Created Vulkan instance." << std::endl;
 }
 
 Instance::~Instance() {
@@ -70,8 +69,6 @@ Instance::~Instance() {
 }
 
 bool Instance::checkValidationLayerSupport() {
-	static Logger& logger = Logger::getLogger();
-	std::stringstream line;
 
 	// Query the instance for supported validation layers
 	uint32_t layerCount;
@@ -79,7 +76,7 @@ bool Instance::checkValidationLayerSupport() {
 	std::vector<VkLayerProperties> supportedLayers(layerCount);
 	vkEnumerateInstanceLayerProperties(&layerCount, supportedLayers.data());
 
-	logger.printLayers("Layers Supported by Instance:", supportedLayers);
+    Logger::printLayers("Layers Supported by Instance:", supportedLayers);
 
 	// Loop through the requested validation layers and confirm they are all supported
 	for (const char* layer : Instance::validationLayers) {
@@ -91,17 +88,15 @@ bool Instance::checkValidationLayerSupport() {
 			}
 		}
 		if (!foundLayer) {
-			line << "Layer \"" << layer << "\" is not supported!";
-			logger.print(line.str());
+			std::cout << "Layer \"" << layer << "\" is not supported!" << std::endl;
 			return false;
 		}
 	}
-	logger.print("All requested layers are supported!");
+    std::cout << "All requested layers are supported!" << std::endl;
 	return true;
 }
 
 void Instance::getRequiredInstanceExtensions(std::vector<const char*>& extensions, bool validationLayers) {
-	static Logger& logger = Logger::getLogger();
 
 	Window::getRequiredInstanceExtensions(extensions);
 
@@ -109,5 +104,5 @@ void Instance::getRequiredInstanceExtensions(std::vector<const char*>& extension
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 
-	logger.printExtensions("Required Instance Extensions:", extensions);
+    Logger::printExtensions("Required Instance Extensions:", extensions);
 }

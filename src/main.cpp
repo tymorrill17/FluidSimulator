@@ -33,10 +33,6 @@ int main(int argc, char* argv[]) {
 	//Application* app = new Application();
 	Application* app = new Application(APPLICATION_WIDTH, APPLICATION_HEIGHT, "2D Fluid Simulator");
 
-	static Logger& logger = Logger::getLogger(); // Initialize logger
-#ifdef _DEBUG
-	logger.activate(); // If debug mode, activate logger and print to the console
-#endif
 	try {
 
 		static Timer& timer = Timer::getTimer();
@@ -113,7 +109,7 @@ int main(int argc, char* argv[]) {
 		GuiRenderSystem guiRenderSystem(app->renderer(), app->window());
 		app->renderer().addRenderSystem(&guiRenderSystem);
 
-		logger.print("Starting the main loop!");
+        std::cout << "Starting the main loop!" << std::endl;
 
 		// Start physics when this becomes true;
 		bool letThereBeLight = false;
@@ -212,7 +208,7 @@ int main(int argc, char* argv[]) {
 
 		app->renderer().waitForIdle();
 
-		logger.print("Shutting Down... Bye Bye!");
+        std::cout << "Shutting Down... Bye Bye!" << std::endl;
 	}
 	catch (const std::exception& e) {
 		std::stringstream line;

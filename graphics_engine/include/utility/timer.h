@@ -14,14 +14,14 @@ public:
 		return instance;
 	}
 
-	inline float frameTime() const { return _frameTime; }
-	inline float framesPerSecond() const { return _fps; }
+	inline float frameTime() { return _frameTime; }
+	inline float framesPerSecond() { return _fps; }
 
 private:
 	Timer();
 
 	float _frameTime;
-	float _fps;
+	float _fps; // frames per second that are averaged over time
 
 	std::chrono::steady_clock::time_point _currentTime;
 	std::chrono::steady_clock::time_point _newTime;

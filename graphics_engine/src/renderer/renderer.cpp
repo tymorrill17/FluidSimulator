@@ -15,16 +15,12 @@ Renderer::Renderer(Window& window) :
 	_descriptorLayoutBuilder(_device),
 	_descriptorWriter(_device) {
 
-	static Logger& logger = Logger::getLogger();
-
 	_frames.reserve(_swapchain.framesInFlight());
 	for (int i = 0; i < _frames.capacity(); i++) {
 		_frames.emplace_back(std::move(_device));
 	}
 
-	// Camera data will be sent using a uniform buffer (or push constants... need to refresh my knowledge of them)
-
-	logger.print("Engine Initiated!");
+    std::cout << "Engine Initiated!" << std::endl;
 }
 
 static VkRenderingInfoKHR renderingInfoKHR(VkExtent2D extent, uint32_t colorAttachmentCount, VkRenderingAttachmentInfo* pColorAttachmentInfos, VkRenderingAttachmentInfo* pDepthAttachmentInfo) {

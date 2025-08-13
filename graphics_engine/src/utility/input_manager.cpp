@@ -4,19 +4,17 @@ InputManager::InputManager(Window& window) :
 	_window(window) {}
 
 void InputManager::processInputs() {
-	static Logger& logger = Logger::getLogger();
 	static Gui& _gui = Gui::getGui();
 
 	SDL_Event sdl_event;
 	//Handle events on queue
 	while (SDL_PollEvent(&sdl_event) != 0) {
-		
+
 		// Let the gui backend handle its inputs
 		_gui.processInputs(&sdl_event);
 
-		//close the window when user alt-f4s or clicks the X button			
 		switch (sdl_event.type) {
-		case SDL_QUIT:
+	 	case SDL_QUIT: //close the window when user alt-f4s or clicks the X button
 			_window.closeWindow();
 			break;
 		case SDL_MOUSEMOTION:

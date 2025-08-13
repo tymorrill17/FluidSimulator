@@ -1,6 +1,8 @@
 #pragma once
 
 #include "render_systems/render_system.h"
+#include "renderer/descriptor.h"
+#include "renderer/renderer.h"
 #include "utility/gui.h"
 
 class GuiRenderSystem : public RenderSystem {

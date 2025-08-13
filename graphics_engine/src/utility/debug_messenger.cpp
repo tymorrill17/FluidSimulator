@@ -1,8 +1,7 @@
 #include "utility/debug_messenger.h"
 
-DebugMessenger::DebugMessenger(const Instance& instance) : instance(instance), debugMessenger(VK_NULL_HANDLE) {
+DebugMessenger::DebugMessenger(Instance& instance) : instance(instance), debugMessenger(VK_NULL_HANDLE) {
 	if (instance.validationLayersEnabled()) {
-		static Logger& logger = Logger::getLogger();
 
 		// Then set up the debug messenger
 		VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
@@ -20,7 +19,7 @@ DebugMessenger::DebugMessenger(const Instance& instance) : instance(instance), d
 			throw std::runtime_error("Failed to create debug messenger!");
 		}
 
-		logger.print("Created debug messenger.");
+        std::cout << "Created debug messenger." << std::endl;
 	}
 }
 

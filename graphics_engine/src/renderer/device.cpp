@@ -1,4 +1,5 @@
 #include "renderer/device.h"
+#include <iostream>
 
 VkPhysicalDeviceFeatures Device::deviceFeatures{};
 
@@ -10,15 +11,13 @@ VkPhysicalDeviceVulkan12Features Device::features12{ .sType = VK_STRUCTURE_TYPE_
 													 .descriptorIndexing = true,
 													 .bufferDeviceAddress = true };
 
-Device::Device(const Instance& instance, Window& window, const std::vector<const char*>& extensions) : 
+Device::Device(const Instance& instance, Window& window, const std::vector<const char*>& extensions) :
 	_physDevice(VK_NULL_HANDLE),
 	_logicalDevice(VK_NULL_HANDLE),
 	_window(window),
 	_instance(instance),
-	_graphQueue(VK_NULL_HANDLE), 
+	_graphQueue(VK_NULL_HANDLE),
 	_presQueue(VK_NULL_HANDLE) {
-
-	static Logger& logger = Logger::getLogger();
 
 	// Create the surface for the passed-in window. I don't necessarily like it being here, but we are keeping window creation separate from the engine, so this has to be here for now.
 	_window.createSurface(_instance.handle());
@@ -27,11 +26,11 @@ Device::Device(const Instance& instance, Window& window, const std::vector<const
 	_physDevice = selectPhysicalDevice(_instance.handle(), _window.surface(), extensions);
 	// Queue the physical device properties
 	vkGetPhysicalDeviceProperties(_physDevice, &_physDeviceProperties);
-	logger.log(_physDeviceProperties);
+    Logger::log(_physDeviceProperties);
 
 	// Find the queue families and assign their indices
 	_indices = QueueFamily::findQueueFamilies(_physDevice, _window.surface());
-	logger.log(_indices);
+	Logger::log(_indices);
 	std::set<uint32_t> uniqueQueueFamilies = { _indices.graphicsFamily.value(), _indices.presentFamily.value() };
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	// Populate queue create infos
@@ -67,12 +66,12 @@ Device::Device(const Instance& instance, Window& window, const std::vector<const
 	if (vkCreateDevice(_physDevice, &deviceCreateInfo, nullptr, &_logicalDevice) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create logical device!");
 	}
-	logger.print("Vulkan device successfully created.");
+    std::cout << "Vulkan device successfully created." << std::endl;
 
 	// Get handles for the graphics and present queues
 	vkGetDeviceQueue(_logicalDevice, _indices.graphicsFamily.value(), 0, &_graphQueue);
 	vkGetDeviceQueue(_logicalDevice, _indices.presentFamily.value(), 0, &_presQueue);
-	
+
 }
 
 Device::~Device() {
@@ -80,7 +79,6 @@ Device::~Device() {
 }
 
 bool Device::checkDeviceExtensionSupport(VkPhysicalDevice physicalDevice, std::vector<const char*>& extensions) {
-	static Logger& logger = Logger::getLogger();
 
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
@@ -91,8 +89,8 @@ bool Device::checkDeviceExtensionSupport(VkPhysicalDevice physicalDevice, std::v
 	// Get supported extensions
 	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
 	vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
-	logger.printExtensions("Available Device Extensions:", availableExtensions);
-	logger.printExtensions("Required Device Extensions:", extensions);
+	Logger::printExtensions("Available Device Extensions:", availableExtensions);
+	Logger::printExtensions("Required Device Extensions:", extensions);
 
 	std::set<std::string> requiredExtensions(extensions.begin(), extensions.end());
 	for (const auto& extension : availableExtensions) {
@@ -100,16 +98,16 @@ bool Device::checkDeviceExtensionSupport(VkPhysicalDevice physicalDevice, std::v
 	}
 
 	if (requiredExtensions.empty()) {
-		logger.print("Required extensions are supported by the physical device!");
+        std::cout << "Required extensions are supported by the physical device!" << std::endl;
 		return true;
 	}
-	logger.print("Required extensions are NOT supported, selecting next device...");
+    std::cout << "Required extensions are NOT supported, selecting next device..." << std::endl;
 	return false;
 }
 
 bool Device::isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
 	QueueFamilyIndices indices = QueueFamily::findQueueFamilies(physicalDevice, surface);
-	
+
 	bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, Instance::deviceExtensions);
 
 	bool swapchainAdequate = true; // false;
@@ -126,7 +124,6 @@ bool Device::isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surf
 }
 
 VkPhysicalDevice Device::selectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*>& requiredExtensions) {
-	static Logger& logger = Logger::getLogger();
 
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -134,25 +131,25 @@ VkPhysicalDevice Device::selectPhysicalDevice(VkInstance instance, VkSurfaceKHR 
 	if (deviceCount == 0)
 		throw std::runtime_error("Failed to find any GPU with Vulkan support!");
 
-	logger.print("Selecting physical device...");
+    std::cout << "Selecting physical device..." << std::endl;
 
 	// Get available devices
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-	logger.printDevices(devices);
+	Logger::printDevices(devices);
 
 	VkPhysicalDevice selectedDevice = VK_NULL_HANDLE;
 	for (const auto& device : devices) {
 		if (isDeviceSuitable(device, surface)) {
 			selectedDevice = device;
-			logger.print("Selected a suitable physical device: ");
+            std::cout << "Selected a suitable physical device: " << std::endl;
 			break;
 		}
 	}
 
 	// Fall back on default GPU if no other suitable ones
 	if (selectedDevice == VK_NULL_HANDLE) {
-		logger.print("Failed to find a suitable physical device, selecting default: ");
+        std::cout << "Failed to find a suitable physical device, selecting default: " << std::endl;
 		selectedDevice = devices[0];
 	}
 

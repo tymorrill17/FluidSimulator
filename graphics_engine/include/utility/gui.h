@@ -1,6 +1,5 @@
 #pragma once
 
-#include "renderer/renderer.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_vulkan.h"
@@ -18,23 +17,17 @@ public:
 	}
 
 	// @brief Let ImGui process the SDL Event that was caught
-	//
 	// @param event - SDL Event to be processed
 	void processInputs(SDL_Event* event);
 
 	// @brief Add an ImGui widget to the window corresponding to windowName. Widgets will be located in their corresponding windows
-	//
 	// @param windowName - Name of window where widget will be located
 	// @param widget - ImGui function handle to call when constructWindow is called
 	void addWidget(const std::string& windowName, const std::function<void()>& widget);
 
-	// @brief constructs the windows stored in the widget dictionary right before rendering. 
+	// @brief constructs the windows stored in the widget dictionary right before rendering.
 	void constructWindows();
 
 private:
-	Gui() {}
-
 	std::unordered_map<std::string, std::vector<std::function<void()>>> _widgetDictionary;
-
-	bool active = true;
 };

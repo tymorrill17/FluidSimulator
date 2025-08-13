@@ -2,8 +2,6 @@
 #include "vma/vk_mem_alloc.h"
 #include "utility/allocator.h"
 
-Allocator* Allocator::_allocator;
-
 Allocator::Allocator(Device& device, Instance& instance) : _device(device), _instance(instance) {
 	VmaAllocatorCreateInfo allocatorCreateInfo{
 		.physicalDevice = _device.physicalDevice(),
@@ -13,7 +11,6 @@ Allocator::Allocator(Device& device, Instance& instance) : _device(device), _ins
 	if (vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create the VMA allocator!");
 	}
-	_allocator = this;
 }
 
 Allocator::~Allocator() {
