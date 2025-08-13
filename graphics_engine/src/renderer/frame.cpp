@@ -5,7 +5,7 @@ Frame::Frame(Device& device) :
     _device(device),
 	_presentSemaphore(device),
 	_renderSemaphore(device),
-	_renderFence(device, VK_FENCE_CREATE_SIGNALED_BIT),
-	_command(device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {}
+	_renderFence(device, VK_FENCE_CREATE_SIGNALED_BIT)
+{}
 
 

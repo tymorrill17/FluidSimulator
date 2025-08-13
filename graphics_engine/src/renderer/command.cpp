@@ -1,37 +1,62 @@
 #include "renderer/command.h"
 #include "renderer/frame.h"
+#include "vulkan/vulkan_core.h"
 
-Command::Command(Device& device, VkCommandPoolCreateFlags flags) :
-	_device(device),
-	_commandPool(VK_NULL_HANDLE),
-	_commandBuffer(VK_NULL_HANDLE),
-	_flags(flags),
-	_inProgress(false) {
+// CommandPool --------------------------------------------------------------------------------------------------
 
-	// First, create the command pool
+CommandPool::CommandPool(Device& device, VkCommandPoolCreateFlags flags) :
+    _device(device),
+    _commandPool(VK_NULL_HANDLE) {
+
 	VkCommandPoolCreateInfo commandPoolCreateInfo{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 		.flags = flags,
 		.queueFamilyIndex = _device.queueFamilyIndices().graphicsFamily.value()
 	};
 
-	if (vkCreateCommandPool(_device.handle(), &commandPoolCreateInfo, nullptr, &_commandPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(_device.handle(), &commandPoolCreateInfo, nullptr, &_commandPool) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create command pool!");
 	}
+}
+
+CommandPool::~CommandPool() {
+	vkDestroyCommandPool(_device.handle(), _commandPool, nullptr);
+}
+
+void CommandPool::reset(VkCommandPoolResetFlags flags) {
+    vkResetCommandPool(_device.handle(), _commandPool, flags);
+}
+
+// Command --------------------------------------------------------------------------------------------------
+
+Command::Command(Device& device, VkCommandPoolCreateFlags flags) :
+	_device(device),
+	_commandPool(nullptr),
+	_commandBuffer(VK_NULL_HANDLE),
+	_inProgress(false) {
+
+    // Since no command pool was passed in, we need to create one
+    _commandPool = std::make_shared<CommandPool>(_device, flags);
 
 	// Now allocate the command buffer
 	allocateCommandBuffer();
 }
 
-Command::~Command() {
-	cleanup();
+Command::Command(Device& device, CommandPool* commandPool) :
+	_device(device),
+	_commandPool(commandPool),
+	_commandBuffer(VK_NULL_HANDLE),
+	_inProgress(false) {
+
+	// Now allocate the command buffer
+	allocateCommandBuffer();
 }
 
 void Command::allocateCommandBuffer(VkCommandBufferLevel level) {
 	VkCommandBufferAllocateInfo allocateInfo{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 		.pNext = nullptr,
-		.commandPool = _commandPool,
+		.commandPool = _commandPool->handle(),
 		.level = level,
 		.commandBufferCount = 1,
 	};
@@ -119,36 +144,14 @@ void Command::submitToQueue(VkQueue queue, Frame& frame) {
 	}
 }
 
-Command::Command(Command&& other) noexcept : _device(other._device),
-	_commandPool(other._commandPool),
-	_commandBuffer(other._commandBuffer),
-	_flags(other._flags) {
-	other._commandPool = VK_NULL_HANDLE;
-	other._commandBuffer = VK_NULL_HANDLE;
-	other._flags = 0;
-}
-
-Command& Command::operator=(Command&& other) noexcept {
-	if (this != &other) {
-		cleanup();
-
-		_commandPool = other._commandPool;
-		_commandBuffer = other._commandBuffer;
-		_flags = other._flags;
-
-		other._commandPool = VK_NULL_HANDLE;
-		other._commandBuffer = VK_NULL_HANDLE;
-		other._flags = 0;
-	}
-	return *this;
-}
-
-void Command::cleanup() {
-	vkDestroyCommandPool(_device.handle(), _commandPool, nullptr);
-}
+// ImmediateCommand --------------------------------------------------------------------------------------------------
 
 ImmediateCommand::ImmediateCommand(Device& device, VkCommandPoolCreateFlags flags) :
 	Command(device, flags),
+	_submitFence(device, VK_FENCE_CREATE_SIGNALED_BIT) {}
+
+ImmediateCommand::ImmediateCommand(Device& device, CommandPool* commandPool) :
+	Command(device, commandPool),
 	_submitFence(device, VK_FENCE_CREATE_SIGNALED_BIT) {}
 
 void ImmediateCommand::immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function) {
@@ -157,10 +160,9 @@ void ImmediateCommand::immediateSubmit(std::function<void(VkCommandBuffer cmd)>&
 	reset(); // Reset the command buffer
 
 	begin();
-
 	function(_commandBuffer);
-
 	end();
+
 	submitToQueue(_device.graphicsQueue());
 	vkWaitForFences(_device.handle(), 1, &fence, true, 9999999999);
 }

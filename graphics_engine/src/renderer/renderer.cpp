@@ -1,4 +1,5 @@
 #include "renderer/renderer.h"
+#include <cstdint>
 
 Renderer::Renderer(Window& window) :
 	_window(window),
@@ -12,12 +13,14 @@ Renderer::Renderer(Window& window) :
 	_drawImage(_device, _allocator, VkExtent3D{ _window.extent().width, _window.extent().height, 1 }, _swapchain.imageFormat(),
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		VMA_MEMORY_USAGE_GPU_ONLY, VkMemoryAllocateFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), VK_IMAGE_ASPECT_COLOR_BIT),
+    _commandPool(_device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
 	_descriptorLayoutBuilder(_device),
 	_descriptorWriter(_device) {
 
 	_frames.reserve(_swapchain.framesInFlight());
 	for (int i = 0; i < _frames.capacity(); i++) {
 		_frames.emplace_back(_device);
+        _perFrameCmd.emplace_back(_device, &_commandPool);
 	}
 
     std::cout << "Engine Initiated!" << std::endl;
@@ -37,8 +40,12 @@ static VkRenderingInfoKHR renderingInfoKHR(VkExtent2D extent, uint32_t colorAtta
 	return renderInfo;
 }
 
+uint32_t Renderer::getFrameIndex() {
+    return _frameNumber % _swapchain.framesInFlight();
+}
+
 Frame& Renderer::getCurrentFrame() {
-	return _frames[_frameNumber % _swapchain.framesInFlight()];
+	return _frames[getFrameIndex()];
 }
 
 Frame& Renderer::getFrame(int index) {
@@ -61,7 +68,7 @@ void Renderer::renderAllSystems() {
 	_swapchain.acquireNextImage(&getCurrentFrame().presentSemaphore(), nullptr);
 
 	// Get the current frame's command buffer
-	Command& cmd = getCurrentFrame().command();
+	Command& cmd = _perFrameCmd[getFrameIndex()];
 	cmd.reset(); // Reset before adding more commands to be safe
 	cmd.begin(); // Begin the command buffer
 

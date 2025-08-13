@@ -14,12 +14,10 @@ public:
 	inline Semaphore& presentSemaphore() { return _presentSemaphore; }
 	inline Semaphore& renderSemaphore() { return _renderSemaphore; }
 	inline Fence& renderFence() { return _renderFence; }
-	inline Command& command() { return _command; }
 
 private:
 	Device& _device;
 	Semaphore _presentSemaphore;
 	Semaphore _renderSemaphore;
 	Fence _renderFence;
-	Command _command;
 };

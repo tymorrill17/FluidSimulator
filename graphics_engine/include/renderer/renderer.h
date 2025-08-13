@@ -1,5 +1,6 @@
 #pragma once
 #include "NonCopyable.h"
+#include "renderer/command.h"
 #include "utility/allocator.h"
 #include "utility/debug_messenger.h"
 #include "pipeline_builder.h"
@@ -7,6 +8,7 @@
 #include "image.h"
 #include "descriptor.h"
 #include "render_systems/render_system.h"
+#include <cstdint>
 
 class Swapchain;
 class AllocatedImage;
@@ -29,12 +31,15 @@ public:
 	// @return Returns the Renderer handle in order to chain together adds
 	Renderer& addRenderSystem(RenderSystem* renderSystem);
 
+    // @brief Gets the swapchain index of the current frame
+    uint32_t getFrameIndex();
+
 	// @brief Gets the frame object of the current frame by finding frameNumber % swapchain.framesInFlight
     // @return Frame object at current frame
 	Frame& getCurrentFrame();
 
     // @brief Gets the frame object at the given index
-    // @param frame index (must be < swapchain.framesInFlight
+    // @param frame index (must be < swapchain.framesInFlight)
     // @return Frame object at index
 	Frame& getFrame(int index);
 
@@ -63,6 +68,8 @@ private:
     // Frame data and draw image
 	std::vector<Frame> _frames; // Contains command buffers and sync objects for each frame in the swapchain
 	AllocatedImage _drawImage; // Image that gets rendered to then copied to the swapchain image(s)
+    CommandPool _commandPool;
+    std::vector<Command> _perFrameCmd;
 
     // Descriptor sets
 	DescriptorLayoutBuilder _descriptorLayoutBuilder; // Build descriptor set layouts
