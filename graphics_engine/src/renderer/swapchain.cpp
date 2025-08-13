@@ -1,4 +1,5 @@
 #include "renderer/swapchain.h"
+#include <stdexcept>
 
 Swapchain::Swapchain(Device& device, Window& window) :
     _device(device),
@@ -17,6 +18,11 @@ void Swapchain::createSwapchain() {
 
 	// Query swapchain support details
 	_supportDetails = querySwapchainSupport(_device.physicalDevice(), _window.surface());
+
+    bool physicalDeviceAdequate = !_supportDetails.formats.empty() && !_supportDetails.presentModes.empty();
+    if (!physicalDeviceAdequate) {
+        throw std::runtime_error("The physical device does not have sufficient swapchain support!");
+    }
 
 	// Select the format and present modes of the swapchain
 	VkSurfaceFormatKHR surfaceFormat = selectSwapchainSurfaceFormat(_supportDetails.formats);
@@ -64,7 +70,7 @@ void Swapchain::createSwapchain() {
 		swapchainCreateInfo.pQueueFamilyIndices = nullptr;
 	}
 
-	if (vkCreateSwapchainKHR(_device.device(), &swapchainCreateInfo, nullptr, &_swapchain) != VK_SUCCESS) {
+	if (vkCreateSwapchainKHR(_device.handle(), &swapchainCreateInfo, nullptr, &_swapchain) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create swapchain!");
 	}
 
@@ -72,9 +78,9 @@ void Swapchain::createSwapchain() {
 
 	// Get the new swapchain's images
     std::vector<VkImage> images;
-	vkGetSwapchainImagesKHR(_device.device(), _swapchain, &_framesInFlight, nullptr);
+	vkGetSwapchainImagesKHR(_device.handle(), _swapchain, &_framesInFlight, nullptr);
 	images.resize(_framesInFlight);
-	vkGetSwapchainImagesKHR(_device.device(), _swapchain, &_framesInFlight, images.data());
+	vkGetSwapchainImagesKHR(_device.handle(), _swapchain, &_framesInFlight, images.data());
 
 	// Now fill the _images vector, which creates the image views through the Image constructor
 	_images.reserve(_framesInFlight);
@@ -85,20 +91,20 @@ void Swapchain::createSwapchain() {
 }
 
 void Swapchain::cleanup() {
-	vkDestroySwapchainKHR(_device.device(), _swapchain, nullptr);
+	vkDestroySwapchainKHR(_device.handle(), _swapchain, nullptr);
 	_images.clear();
 }
 
 
 void Swapchain::recreate() {
-	vkDeviceWaitIdle(_device.device()); // Wait for device to finish its tasks
+	vkDeviceWaitIdle(_device.handle()); // Wait for device to finish its tasks
 	cleanup(); // Destroy old swapchain
 	createSwapchain(); // Recreate the swapchain
 	_resizeRequested = false;
 }
 
 void Swapchain::acquireNextImage(Semaphore* semaphore, Fence* fence) {
-    VkResult e = vkAcquireNextImageKHR(_device.device(), _swapchain, 1000000000, semaphore->handle(), nullptr, &_imageIndex);
+    VkResult e = vkAcquireNextImageKHR(_device.handle(), _swapchain, 1000000000, semaphore->handle(), nullptr, &_imageIndex);
     if (e == VK_ERROR_OUT_OF_DATE_KHR) { // This is a point of entry for the information that the window has been resized.
         _resizeRequested = true;
     } else if(e != VK_SUCCESS) {

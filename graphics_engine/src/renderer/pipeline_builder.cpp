@@ -1,7 +1,7 @@
 #include "renderer/pipeline_builder.h"
 #include <iostream>
 
-PipelineBuilder::PipelineBuilder(const Device& device) : _device(device) {
+PipelineBuilder::PipelineBuilder(Device& device) : _device(device) {
 	clear();
 }
 
@@ -59,7 +59,7 @@ Pipeline PipelineBuilder::buildPipeline() {
     };
 
     VkPipeline vkPipeline;
-    if (vkCreateGraphicsPipelines(_device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(_device.handle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkPipeline) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create pipeline");
     }
 

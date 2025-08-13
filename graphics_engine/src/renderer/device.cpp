@@ -1,21 +1,22 @@
 #include "renderer/device.h"
+#include "renderer/swapchain.h"
 #include <iostream>
 
-VkPhysicalDeviceFeatures Device::deviceFeatures{};
+static VkPhysicalDeviceFeatures deviceFeatures{};
 
-VkPhysicalDeviceVulkan13Features Device::features13{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+static VkPhysicalDeviceVulkan13Features features13{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
 													 .synchronization2 = true,
 													 .dynamicRendering = true };
 
-VkPhysicalDeviceVulkan12Features Device::features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+static VkPhysicalDeviceVulkan12Features features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
 													 .descriptorIndexing = true,
 													 .bufferDeviceAddress = true };
 
-Device::Device(const Instance& instance, Window& window, const std::vector<const char*>& extensions) :
+Device::Device(Instance& instance, Window& window, const std::vector<const char*>& extensions) :
+    _instance(instance),
+    _window(window),
 	_physDevice(VK_NULL_HANDLE),
 	_logicalDevice(VK_NULL_HANDLE),
-	_window(window),
-	_instance(instance),
 	_graphQueue(VK_NULL_HANDLE),
 	_presQueue(VK_NULL_HANDLE) {
 
@@ -24,7 +25,8 @@ Device::Device(const Instance& instance, Window& window, const std::vector<const
 
 	// Select the physical device to be used for rendering
 	_physDevice = selectPhysicalDevice(_instance.handle(), _window.surface(), extensions);
-	// Queue the physical device properties
+
+	// Query the physical device properties
 	vkGetPhysicalDeviceProperties(_physDevice, &_physDeviceProperties);
     Logger::log(_physDeviceProperties);
 
@@ -33,6 +35,7 @@ Device::Device(const Instance& instance, Window& window, const std::vector<const
 	Logger::log(_indices);
 	std::set<uint32_t> uniqueQueueFamilies = { _indices.graphicsFamily.value(), _indices.presentFamily.value() };
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+
 	// Populate queue create infos
 	float priority = 1.0f;
 	for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -57,8 +60,8 @@ Device::Device(const Instance& instance, Window& window, const std::vector<const
 	.pNext = &versionFeatures,
 	.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
 	.pQueueCreateInfos = queueCreateInfos.data(),
-	.enabledLayerCount = instance.validationLayersEnabled() ? static_cast<uint32_t>(Instance::validationLayers.size()) : 0,
-	.ppEnabledLayerNames = instance.validationLayersEnabled() ? Instance::validationLayers.data() : VK_NULL_HANDLE,
+	.enabledLayerCount = instance.validationLayersEnabled() ? static_cast<uint32_t>(Instance::requestedValidationLayers.size()) : 0,
+	.ppEnabledLayerNames = instance.validationLayersEnabled() ? Instance::requestedValidationLayers.data() : VK_NULL_HANDLE,
 	.enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
 	.ppEnabledExtensionNames = extensions.data()
 	};
@@ -71,7 +74,6 @@ Device::Device(const Instance& instance, Window& window, const std::vector<const
 	// Get handles for the graphics and present queues
 	vkGetDeviceQueue(_logicalDevice, _indices.graphicsFamily.value(), 0, &_graphQueue);
 	vkGetDeviceQueue(_logicalDevice, _indices.presentFamily.value(), 0, &_presQueue);
-
 }
 
 Device::~Device() {
@@ -106,21 +108,16 @@ bool Device::checkDeviceExtensionSupport(VkPhysicalDevice physicalDevice, std::v
 }
 
 bool Device::isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+
 	QueueFamilyIndices indices = QueueFamily::findQueueFamilies(physicalDevice, surface);
 
-	bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, Instance::deviceExtensions);
-
-	bool swapchainAdequate = true; // false;
-	if (extensionsSupported) {
-		// SwapchainSupportDetails swapchainSupport = Swapchain::querySwapchainSupport(device, surface);
-		// swapchainAdequate = !swapchainSupport.formats.empty() && !swapchainSupport.presentModes.empty();
-	}
+	bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, Instance::requestedDeviceExtensions);
 
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 	bool discreteGPU = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 
-	return indices.isComplete() && extensionsSupported && swapchainAdequate && discreteGPU;
+	return indices.isComplete() && extensionsSupported && discreteGPU;
 }
 
 VkPhysicalDevice Device::selectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*>& requiredExtensions) {

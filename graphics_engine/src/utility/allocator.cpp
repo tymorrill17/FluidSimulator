@@ -5,7 +5,7 @@
 Allocator::Allocator(Device& device, Instance& instance) : _device(device), _instance(instance) {
 	VmaAllocatorCreateInfo allocatorCreateInfo{
 		.physicalDevice = _device.physicalDevice(),
-		.device = _device.device(),
+		.device = _device.handle(),
 		.instance = _instance.handle()
 	};
 	if (vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator) != VK_SUCCESS) {

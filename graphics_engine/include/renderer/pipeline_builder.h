@@ -29,7 +29,7 @@ struct PipelineConfig {
 
 class PipelineBuilder : public NonCopyable {
 public:
-	PipelineBuilder(const Device& device);
+	PipelineBuilder(Device& device);
 
 	// @brief Resets the PipelineBuilder to its default state
 	void clear();
@@ -63,6 +63,6 @@ public:
 
 private:
 	// @brief Reference to the Vulkan device which creates the pipelines
-	const Device& _device;
+	Device& _device;
 	PipelineConfig _config;
 };

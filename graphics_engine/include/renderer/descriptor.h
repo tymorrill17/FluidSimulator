@@ -19,7 +19,7 @@ struct PoolSizeRatio {
 
 class DescriptorPool : public NonCopyable {
 public:
-	DescriptorPool(const Device& device, uint32_t maxSets, std::span<PoolSizeRatio> poolSizeRatios);
+	DescriptorPool(Device& device, uint32_t maxSets, std::span<PoolSizeRatio> poolSizeRatios);
 	~DescriptorPool();
 
 	// @brief Allocates a descriptor set using layout
@@ -33,16 +33,16 @@ public:
 	inline VkDescriptorPool pool() const { return _descriptorPool; }
 
 private:
-	const Device& _device;
+	Device& _device;
 	VkDescriptorPool _descriptorPool;
 };
 
 class DescriptorLayoutBuilder : public NonCopyable {
 public:
-	DescriptorLayoutBuilder(const Device& device);
+	DescriptorLayoutBuilder(Device& device);
 
 	// @brief Adds a binding and descriptor type to the descriptor layout builder
-	// 
+	//
 	// @param binding - Which binding position to assign this to
 	// @param descriptorType - Which type of descriptor set to bind
 	// @param shaderStages - Which shader will use this descriptor set
@@ -56,7 +56,7 @@ public:
 	VkDescriptorSetLayout build();
 
 private:
-	const Device& _device;
+	Device& _device;
 
 	std::vector<VkDescriptorSetLayoutBinding> _bindings;
 };
@@ -64,7 +64,7 @@ private:
 // DescriptorWriter is for binding and writing the data to the GPU
 class DescriptorWriter : public NonCopyable{
 public:
-	DescriptorWriter(const Device& device);
+	DescriptorWriter(Device& device);
 
 	// @brief adds a VkDescriptorImageInfo to the imageInfos queue to be written using updateSet()
 	DescriptorWriter& addImageWrite(uint32_t binding, AllocatedImage& image, VkSampler sampler, VkDescriptorType descriptorType);
@@ -79,7 +79,7 @@ public:
 	DescriptorWriter& updateDescriptorSet(VkDescriptorSet descriptor);
 
 private:
-	const Device& _device;
+	Device& _device;
 
 	std::deque<VkDescriptorImageInfo> _imageInfos;
 	std::deque<VkDescriptorBufferInfo> _bufferInfos;

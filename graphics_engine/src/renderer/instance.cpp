@@ -1,10 +1,10 @@
 #include "renderer/instance.h"
 #include <iostream>
 
-std::vector<const char*> Instance::validationLayers = {
+std::vector<const char*> Instance::requestedValidationLayers = {
 	"VK_LAYER_KHRONOS_validation" // Standard validation layer preset
 };
-std::vector<const char*> Instance::deviceExtensions = {
+std::vector<const char*> Instance::requestedDeviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME // Necessary extension to use swapchains
 };
 
@@ -47,8 +47,8 @@ Instance::Instance(const char* appName, const char* engineName, bool enableValid
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 	if (enableValidationLayers) {
 		// Request validation layers
-		instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(Instance::validationLayers.size());
-		instanceCreateInfo.ppEnabledLayerNames = Instance::validationLayers.data();
+		instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(Instance::requestedValidationLayers.size());
+		instanceCreateInfo.ppEnabledLayerNames = Instance::requestedValidationLayers.data();
 
 		DebugMessenger::populateDebugMessengerCreateInfo(debugCreateInfo);
 		instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)& debugCreateInfo;
@@ -79,7 +79,7 @@ bool Instance::checkValidationLayerSupport() {
     Logger::printLayers("Layers Supported by Instance:", supportedLayers);
 
 	// Loop through the requested validation layers and confirm they are all supported
-	for (const char* layer : Instance::validationLayers) {
+	for (const char* layer : Instance::requestedValidationLayers) {
 		bool foundLayer = false;
 		for (const auto& layerProperties : supportedLayers) {
 			if (strcmp(layer, layerProperties.layerName) == 0) {
@@ -96,11 +96,11 @@ bool Instance::checkValidationLayerSupport() {
 	return true;
 }
 
-void Instance::getRequiredInstanceExtensions(std::vector<const char*>& extensions, bool validationLayers) {
+void Instance::getRequiredInstanceExtensions(std::vector<const char*>& extensions, bool requestedValidationLayers) {
 
 	Window::getRequiredInstanceExtensions(extensions);
 
-	if (validationLayers) {
+	if (requestedValidationLayers) {
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 

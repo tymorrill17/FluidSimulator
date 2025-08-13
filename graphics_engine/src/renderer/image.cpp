@@ -43,17 +43,17 @@ void AllocatedImage::createAllocatedImage() {
 		.subresourceRange = subresourceRange
 	};
 
-	if (vkCreateImageView(_device.device(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
+	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create allocated image view!");
 	}
 }
 
-AllocatedImage::AllocatedImage(const Device& device, const Allocator& allocator) :
+AllocatedImage::AllocatedImage(Device& device, const Allocator& allocator) :
 	Image(VK_NULL_HANDLE, VK_NULL_HANDLE, {0, 0, 0}, VK_FORMAT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED),
 	_device(device), _allocator(allocator), _allocation(nullptr), _usageFlags(0), _memoryUsage(VMA_MEMORY_USAGE_UNKNOWN),
 	_vkMemoryUsage(VMA_MEMORY_USAGE_UNKNOWN), _aspectFlags(VK_IMAGE_ASPECT_NONE) {}
 
-AllocatedImage::AllocatedImage(const Device& device, const Allocator& allocator,
+AllocatedImage::AllocatedImage(Device& device, const Allocator& allocator,
 	VkExtent3D extent, VkFormat format, VkImageUsageFlags usageFlags,
 	VmaMemoryUsage memoryUsage, VkMemoryAllocateFlags vkMemoryUsage,
 	VkImageAspectFlags aspectFlags) :
@@ -65,11 +65,11 @@ AllocatedImage::AllocatedImage(const Device& device, const Allocator& allocator,
 }
 
 void AllocatedImage::cleanup() {
-	vkDestroyImageView(_device.device(), _imageView, nullptr);
+	vkDestroyImageView(_device.handle(), _imageView, nullptr);
 	vmaDestroyImage(_allocator.handle(), _image, _allocation);
 }
 
-AllocatedImage::AllocatedImage(AllocatedImage&& other) noexcept : 
+AllocatedImage::AllocatedImage(AllocatedImage&& other) noexcept :
 	Image(other._image, other._imageView, other._extent, other._format, other._imageLayout),
 	_device(other._device), _allocator(other._allocator), _allocation(other._allocation),
 	_usageFlags(other._usageFlags), _memoryUsage(other._memoryUsage), _vkMemoryUsage(other._vkMemoryUsage),
@@ -116,10 +116,10 @@ void AllocatedImage::recreate(VkExtent3D extent) {
 	createAllocatedImage();
 }
 
-SwapchainImage::SwapchainImage(const Device& device) :
+SwapchainImage::SwapchainImage(Device& device) :
 	Image(VK_NULL_HANDLE, VK_NULL_HANDLE, {0, 0, 0}, VK_FORMAT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED), _device(device) {}
 
-SwapchainImage::SwapchainImage(const Device& device, VkImage image, VkExtent3D extent,
+SwapchainImage::SwapchainImage(Device& device, VkImage image, VkExtent3D extent,
 	VkFormat format) :
 	Image(image, VK_NULL_HANDLE, extent, format, VK_IMAGE_LAYOUT_UNDEFINED), _device(device) {
 
@@ -141,13 +141,13 @@ SwapchainImage::SwapchainImage(const Device& device, VkImage image, VkExtent3D e
 		.subresourceRange = subresourceRange
 	};
 
-	if (vkCreateImageView(_device.device(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
+	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create swapchain image view!");
 	}
 }
 
 void SwapchainImage::cleanup() {
-	vkDestroyImageView(_device.device(), _imageView, nullptr);
+	vkDestroyImageView(_device.handle(), _imageView, nullptr);
 }
 
 SwapchainImage::SwapchainImage(SwapchainImage&& other) noexcept :

@@ -1,10 +1,10 @@
 #include "renderer/command.h"
 #include "renderer/frame.h"
 
-Command::Command(const Device& device, VkCommandPoolCreateFlags flags) : 
-	_device(device), 
-	_commandPool(VK_NULL_HANDLE), 
-	_commandBuffer(VK_NULL_HANDLE), 
+Command::Command(Device& device, VkCommandPoolCreateFlags flags) :
+	_device(device),
+	_commandPool(VK_NULL_HANDLE),
+	_commandBuffer(VK_NULL_HANDLE),
 	_flags(flags),
 	_inProgress(false) {
 
@@ -15,7 +15,7 @@ Command::Command(const Device& device, VkCommandPoolCreateFlags flags) :
 		.queueFamilyIndex = _device.queueFamilyIndices().graphicsFamily.value()
 	};
 
-	if (vkCreateCommandPool(_device.device(), &commandPoolCreateInfo, nullptr, &_commandPool) != VK_SUCCESS) {
+	if (vkCreateCommandPool(_device.handle(), &commandPoolCreateInfo, nullptr, &_commandPool) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create command pool!");
 	}
 
@@ -35,7 +35,7 @@ void Command::allocateCommandBuffer(VkCommandBufferLevel level) {
 		.level = level,
 		.commandBufferCount = 1,
 	};
-	if (vkAllocateCommandBuffers(_device.device(), &allocateInfo, &_commandBuffer) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(_device.handle(), &allocateInfo, &_commandBuffer) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to allocate command buffer!");
 	}
 }
@@ -144,16 +144,16 @@ Command& Command::operator=(Command&& other) noexcept {
 }
 
 void Command::cleanup() {
-	vkDestroyCommandPool(_device.device(), _commandPool, nullptr);
+	vkDestroyCommandPool(_device.handle(), _commandPool, nullptr);
 }
 
-ImmediateCommand::ImmediateCommand(const Device& device, VkCommandPoolCreateFlags flags) : 
-	Command(device, flags), 
+ImmediateCommand::ImmediateCommand(Device& device, VkCommandPoolCreateFlags flags) :
+	Command(device, flags),
 	_submitFence(device, VK_FENCE_CREATE_SIGNALED_BIT) {}
 
 void ImmediateCommand::immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function) {
 	VkFence fence = _submitFence.handle();
-	vkResetFences(_device.device(), 1, &fence);
+	vkResetFences(_device.handle(), 1, &fence);
 	reset(); // Reset the command buffer
 
 	begin();
@@ -162,7 +162,7 @@ void ImmediateCommand::immediateSubmit(std::function<void(VkCommandBuffer cmd)>&
 
 	end();
 	submitToQueue(_device.graphicsQueue());
-	vkWaitForFences(_device.device(), 1, &fence, true, 9999999999);
+	vkWaitForFences(_device.handle(), 1, &fence, true, 9999999999);
 }
 
 void ImmediateCommand::submitToQueue(VkQueue queue) {

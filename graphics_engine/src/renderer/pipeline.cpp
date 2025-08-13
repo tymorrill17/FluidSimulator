@@ -3,7 +3,7 @@
 Pipeline::Pipeline() :
 	_device(nullptr), _pipeline(VK_NULL_HANDLE), _pipelineLayout(VK_NULL_HANDLE) {}
 
-Pipeline::Pipeline(const Device* device, VkPipeline pipeline, VkPipelineLayout pipelineLayout) : 
+Pipeline::Pipeline(Device* device, VkPipeline pipeline, VkPipelineLayout pipelineLayout) :
 	_device(device),
 	_pipeline(pipeline),
 	_pipelineLayout(pipelineLayout) {}
@@ -16,11 +16,11 @@ void Pipeline::cleanup() {
 	if (!_device) return;
 
 	if (_pipelineLayout != VK_NULL_HANDLE) {
-		vkDestroyPipelineLayout(_device->device(), _pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(_device->handle(), _pipelineLayout, nullptr);
 		_pipelineLayout = VK_NULL_HANDLE;
 	}
 	if (_pipeline != VK_NULL_HANDLE) {
-		vkDestroyPipeline(_device->device(), _pipeline, nullptr);
+		vkDestroyPipeline(_device->handle(), _pipeline, nullptr);
 		_pipeline = VK_NULL_HANDLE;
 	}
 }
@@ -47,9 +47,9 @@ Pipeline& Pipeline::operator=(Pipeline&& other) noexcept {
 	return *this;
 }
 
-VkPipelineLayout PipelineLayout::createPipelineLayout(const Device& device, VkPipelineLayoutCreateInfo createInfo) {
+VkPipelineLayout PipelineLayout::createPipelineLayout(Device& device, VkPipelineLayoutCreateInfo createInfo) {
 	VkPipelineLayout pipelineLayout;
-	if (vkCreatePipelineLayout(device.device(), &createInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+	if (vkCreatePipelineLayout(device.handle(), &createInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create pipeline layout!");
 	}
 	return pipelineLayout;

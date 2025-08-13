@@ -5,7 +5,7 @@
 #include "command.h"
 #include "NonCopyable.h"
 
-// Base image class 
+// Base image class
 class Image : public NonCopyable {
 public:
 	Image(VkImage image = VK_NULL_HANDLE, VkImageView imageView = VK_NULL_HANDLE,
@@ -36,7 +36,7 @@ public:
 	// @param dst - destination image to copy to
 	static void copyImageOnGPU(Command& cmd, Image& src, Image& dst);
 
-	// @brief Populates a VkRenderingAttachmentInfo struct needed in order to begin rendering without a renderpass. 
+	// @brief Populates a VkRenderingAttachmentInfo struct needed in order to begin rendering without a renderpass.
 	//	      Normally, the renderpass contains information about the attachments, but we are using renderpass-less dynamic rendering
 	//
 	// @param imageView - Image view of the associated image
@@ -58,7 +58,6 @@ protected:
 class AllocatedImage : public Image {
 public:
 	// @brief AllocatedImage constructor. It also allocates memory for the image using VMA and creates an image view
-	//
 	// @param device - Vulkan logical device
 	// @param allocator - VMA allocator object
 	// @param extent - size of the image. Images can be 3D
@@ -67,12 +66,12 @@ public:
 	// @param memoryUsage - VMA flag for where the image will be allocated to
 	// @param vkMemoryUsage - Vulkan flag for where the image will be allocated. Should match the memoryUsage flags
 	// @param aspectFlags - Image aspect flags for image view creation
-	AllocatedImage(const Device& device, const Allocator& allocator);
-	AllocatedImage(const Device& device, const Allocator& allocator,
+	AllocatedImage(Device& device, const Allocator& allocator);
+	AllocatedImage(Device& device, const Allocator& allocator,
 		VkExtent3D extent, VkFormat format, VkImageUsageFlags usageFlags,
 		VmaMemoryUsage memoryUsage, VkMemoryAllocateFlags vkMemoryUsage,
 		VkImageAspectFlags aspectFlags);
-	
+
 
 	AllocatedImage(AllocatedImage&& other) noexcept;
 	AllocatedImage& operator=(AllocatedImage && other) noexcept;
@@ -81,9 +80,9 @@ public:
 	void recreate(VkExtent3D extent);
 
 protected:
-	const Device& _device;
+	Device& _device;
 	const Allocator& _allocator;
-	
+
 	VmaAllocation _allocation;
 
 	void createAllocatedImage();
@@ -97,14 +96,14 @@ protected:
 
 class SwapchainImage : public Image {
 public:
-	SwapchainImage(const Device& device);
-	SwapchainImage(const Device& device, VkImage image, VkExtent3D extent, VkFormat format);
+	SwapchainImage(Device& device);
+	SwapchainImage(Device& device, VkImage image, VkExtent3D extent, VkFormat format);
 
 	SwapchainImage(SwapchainImage&& other) noexcept;
 	SwapchainImage& operator=(SwapchainImage&& other) noexcept;
 
 protected:
-	const Device& _device;
-	
+	Device& _device;
+
 	void cleanup() override;
 };

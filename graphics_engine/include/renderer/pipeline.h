@@ -6,7 +6,7 @@
 class Pipeline : public NonCopyable {
 public:
 	Pipeline();
-	Pipeline(const Device* device, VkPipeline pipeline, VkPipelineLayout pipelineLayout);
+	Pipeline(Device* device, VkPipeline pipeline, VkPipelineLayout pipelineLayout);
 	~Pipeline();
 
 	// Write move constructors for the pipeline builder to function properly
@@ -23,7 +23,7 @@ private:
 	VkPipelineLayout _pipelineLayout;
 
 	// @brief Reference to the Vulkan device used to create the pipeline
-	const Device* _device;
+	Device* _device;
 
 	void cleanup();
 };
@@ -35,6 +35,6 @@ public:
 	static VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo(const std::vector<VkDescriptorSetLayout>& setLayouts = {}, const std::vector<VkPushConstantRange>& pushConstantRanges = {});
 
 	// Creates a pipeline layout using the given create info
-	static VkPipelineLayout createPipelineLayout(const Device& device, VkPipelineLayoutCreateInfo createInfo);
+	static VkPipelineLayout createPipelineLayout(Device& device, VkPipelineLayoutCreateInfo createInfo);
 
 };

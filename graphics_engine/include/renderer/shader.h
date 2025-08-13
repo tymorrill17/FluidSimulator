@@ -8,9 +8,9 @@
 
 class Shader {
 public:
-	Shader(const Device& device, const std::string& filepath, VkShaderStageFlagBits stageFlag);
+	Shader(Device& device, const std::string& filepath, VkShaderStageFlagBits stageFlag);
 	~Shader();
-	
+
 	inline VkShaderModule module() const { return _shaderModule; }
 	inline VkShaderStageFlagBits stage() const { return _shaderStageFlag; }
 
@@ -21,7 +21,7 @@ public:
 	static VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shader);
 
 private:
-	const Device& _device;
+	Device& _device;
 	VkShaderModule _shaderModule;
 	VkShaderStageFlagBits _shaderStageFlag;
 };

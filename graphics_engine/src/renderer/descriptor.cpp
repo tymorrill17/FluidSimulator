@@ -2,7 +2,7 @@
 
 // ---------------------------------------------- DESCRIPTOR POOL -----------------------------------------------------------------
 
-DescriptorPool::DescriptorPool(const Device& device, uint32_t maxSets, std::span<PoolSizeRatio> poolSizeRatios) : 
+DescriptorPool::DescriptorPool(Device& device, uint32_t maxSets, std::span<PoolSizeRatio> poolSizeRatios) :
 	_device(device), _descriptorPool(VK_NULL_HANDLE) {
 
 	std::vector<VkDescriptorPoolSize> poolSizes;
@@ -17,17 +17,17 @@ DescriptorPool::DescriptorPool(const Device& device, uint32_t maxSets, std::span
 		.poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
 		.pPoolSizes = poolSizes.data()
 	};
-	if (vkCreateDescriptorPool(_device.device(), &descriptorPoolCreateInfo, nullptr, &_descriptorPool) != VK_SUCCESS) {
+	if (vkCreateDescriptorPool(_device.handle(), &descriptorPoolCreateInfo, nullptr, &_descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create descriptor pool!");
 	}
 }
 
 DescriptorPool::~DescriptorPool() {
-	vkDestroyDescriptorPool(_device.device(), _descriptorPool, nullptr);
+	vkDestroyDescriptorPool(_device.handle(), _descriptorPool, nullptr);
 }
 
 void DescriptorPool::clearDescriptorSets() {
-	vkResetDescriptorPool(_device.device(), _descriptorPool, 0);
+	vkResetDescriptorPool(_device.handle(), _descriptorPool, 0);
 }
 
 VkDescriptorSet DescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout layout) {
@@ -39,7 +39,7 @@ VkDescriptorSet DescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout layo
 		.pSetLayouts = &layout
 	};
 	VkDescriptorSet set;
-	if (vkAllocateDescriptorSets(_device.device(), &allocInfo, &set) != VK_SUCCESS) {
+	if (vkAllocateDescriptorSets(_device.handle(), &allocInfo, &set) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to allocate descriptor sets!");
 	}
 	return set;
@@ -47,7 +47,7 @@ VkDescriptorSet DescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout layo
 
 // ---------------------------------------------- DESCRIPTOR LAYOUT BUILDER -----------------------------------------------------------------
 
-DescriptorLayoutBuilder::DescriptorLayoutBuilder(const Device& device) : _device(device) {}
+DescriptorLayoutBuilder::DescriptorLayoutBuilder(Device& device) : _device(device) {}
 
 DescriptorLayoutBuilder& DescriptorLayoutBuilder::addBinding(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags) {
 	VkDescriptorSetLayoutBinding newBinding{
@@ -74,7 +74,7 @@ VkDescriptorSetLayout DescriptorLayoutBuilder::build() {
 		.pBindings = _bindings.data()
 	};
 	VkDescriptorSetLayout layout;
-	if (vkCreateDescriptorSetLayout(_device.device(), &descriptorSetLayoutCreateInfo, nullptr, &layout) != VK_SUCCESS) {
+	if (vkCreateDescriptorSetLayout(_device.handle(), &descriptorSetLayoutCreateInfo, nullptr, &layout) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to build descriptor set layout!");
 	}
 	return layout;
@@ -82,7 +82,7 @@ VkDescriptorSetLayout DescriptorLayoutBuilder::build() {
 
 // ---------------------------------------------- DESCRIPTOR WRITER -----------------------------------------------------------------
 
-DescriptorWriter::DescriptorWriter(const Device& device) : _device(device) {}
+DescriptorWriter::DescriptorWriter(Device& device) : _device(device) {}
 
 DescriptorWriter& DescriptorWriter::addImageWrite(uint32_t binding, AllocatedImage& image, VkSampler sampler, VkDescriptorType descriptorType) {
 	VkDescriptorImageInfo& imageInfo = _imageInfos.emplace_back( VkDescriptorImageInfo {
@@ -128,7 +128,7 @@ DescriptorWriter& DescriptorWriter::updateDescriptorSet(VkDescriptorSet descript
 	for (VkWriteDescriptorSet& write : _writes) {
 		write.dstSet = descriptor;
 	}
-	vkUpdateDescriptorSets(_device.device(), static_cast<uint32_t>(_writes.size()), _writes.data(), 0, nullptr);
+	vkUpdateDescriptorSets(_device.handle(), static_cast<uint32_t>(_writes.size()), _writes.data(), 0, nullptr);
 	return *this;
 }
 

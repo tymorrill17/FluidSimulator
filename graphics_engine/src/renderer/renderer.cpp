@@ -4,7 +4,7 @@ Renderer::Renderer(Window& window) :
 	_window(window),
 	_instance("EngineTest", "VulkanEngineV2", true),
 	_debugMessenger(_instance),
-	_device(_instance, _window, Instance::deviceExtensions),
+	_device(_instance, _window, Instance::requestedDeviceExtensions),
 	_allocator(_device, _instance),
 	_swapchain(_device, _window),
 	_pipelineBuilder(_device),
@@ -17,7 +17,7 @@ Renderer::Renderer(Window& window) :
 
 	_frames.reserve(_swapchain.framesInFlight());
 	for (int i = 0; i < _frames.capacity(); i++) {
-		_frames.emplace_back(std::move(_device));
+		_frames.emplace_back(_device);
 	}
 
     std::cout << "Engine Initiated!" << std::endl;
@@ -53,9 +53,9 @@ Renderer& Renderer::addRenderSystem(RenderSystem* renderSystem) {
 void Renderer::renderAllSystems() {
 	// First, wait for the the last frame to render
 	VkFence currentRenderFence = getCurrentFrame().renderFence().handle();
-	vkWaitForFences(_device.device(), 1, &currentRenderFence, true, 1000000000);
+	vkWaitForFences(_device.handle(), 1, &currentRenderFence, true, 1000000000);
 	// Here would be the place to delete all objects from the previous frame (like descriptor sets, etc)
-	vkResetFences(_device.device(), 1, &currentRenderFence);
+	vkResetFences(_device.handle(), 1, &currentRenderFence);
 
 	// Next, request current frame's image from the swapchain
 	_swapchain.acquireNextImage(&getCurrentFrame().presentSemaphore(), nullptr);
@@ -133,5 +133,5 @@ void Renderer::resizeCallback() {
 }
 
 void Renderer::waitForIdle() {
-	vkDeviceWaitIdle(_device.device());
+	vkDeviceWaitIdle(_device.handle());
 }

@@ -9,7 +9,7 @@ class Frame;
 
 class Command : public NonCopyable {
 public:
-	Command(const Device& device, VkCommandPoolCreateFlags flags);
+	Command(Device& device, VkCommandPoolCreateFlags flags);
 	~Command();
 
 	Command(Command&& other) noexcept;
@@ -42,9 +42,9 @@ public:
 
 protected:
 
-	void cleanup(); 
+	void cleanup();
 
-	const Device& _device;
+    Device& _device;
 
 	VkCommandPool _commandPool;
 	VkCommandBuffer _commandBuffer;
@@ -54,7 +54,7 @@ protected:
 
 class ImmediateCommand : public Command {
 public:
-	ImmediateCommand(const Device& device, VkCommandPoolCreateFlags flags);
+	ImmediateCommand(Device& device, VkCommandPoolCreateFlags flags);
 
 	inline Fence& fence() { return _submitFence; }
 

@@ -35,7 +35,7 @@ GuiRenderSystem::GuiRenderSystem(Renderer& renderer, Window& window) :
 	ImGui_ImplVulkan_InitInfo vulkanInit{
 		.Instance = _renderer.instance().handle(),
 		.PhysicalDevice = _renderer.device().physicalDevice(),
-		.Device = _renderer.device().device(),
+		.Device = _renderer.device().handle(),
 		.Queue = _renderer.device().graphicsQueue(),
 		.DescriptorPool = _descriptorPool.pool(),
 		.MinImageCount = _renderer.swapchain().framesInFlight(),

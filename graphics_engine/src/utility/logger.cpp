@@ -52,10 +52,10 @@ void Logger::log(struct QueueFamilyIndices& indices) {
 		std::cout << "\t Present Queue (" << indices.presentFamily.value() << ")" << std::endl;
  }
 
-void Logger::log(VkPhysicalDeviceProperties& physdevice) {
-	std::cout << "Device name: " << physdevice.deviceName << std::endl;
+void Logger::log(VkPhysicalDeviceProperties& physDevice) {
+	std::cout << "Device name: " << physDevice.deviceName << std::endl;
 	std::cout << "\tDevice type: ";
-	switch (physdevice.deviceType) {
+	switch (physDevice.deviceType) {
 	case(VK_PHYSICAL_DEVICE_TYPE_CPU):
 		std::cout << "CPU";
 		break;

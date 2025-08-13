@@ -1,12 +1,12 @@
 #include "renderer/sync.h"
 
-Semaphore::Semaphore(const Device& device, VkSemaphoreCreateFlags flags) : _device(device), _flags(flags), _semaphore(VK_NULL_HANDLE) {
+Semaphore::Semaphore(Device& device, VkSemaphoreCreateFlags flags) : _device(device), _flags(flags), _semaphore(VK_NULL_HANDLE) {
 	VkSemaphoreCreateInfo semaphoreInfo{
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = _flags
 	};
-	if (vkCreateSemaphore(_device.device(), &semaphoreInfo, nullptr, &_semaphore) != VK_SUCCESS) {
+	if (vkCreateSemaphore(_device.handle(), &semaphoreInfo, nullptr, &_semaphore) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create semaphore!");
 	}
 }
@@ -16,7 +16,7 @@ Semaphore::~Semaphore() {
 }
 
 void Semaphore::cleanup() {
-	vkDestroySemaphore(_device.device(), _semaphore, nullptr);
+	vkDestroySemaphore(_device.handle(), _semaphore, nullptr);
 }
 
 Semaphore::Semaphore(Semaphore&& other) noexcept : _device(other._device), _flags(other._flags), _semaphore(other._semaphore) {
@@ -37,13 +37,13 @@ Semaphore& Semaphore::operator=(Semaphore&& other) noexcept {
 	return *this;
 }
 
-Fence::Fence(const Device& device, VkFenceCreateFlags flags) : _device(device), _flags(flags), _fence(VK_NULL_HANDLE) {
+Fence::Fence(Device& device, VkFenceCreateFlags flags) : _device(device), _flags(flags), _fence(VK_NULL_HANDLE) {
 	VkFenceCreateInfo fenceInfo{
 		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = _flags,
 	};
-	if (vkCreateFence(_device.device(), &fenceInfo, nullptr, &_fence) != VK_SUCCESS) {
+	if (vkCreateFence(_device.handle(), &fenceInfo, nullptr, &_fence) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create fence!");
 	}
 }
@@ -53,7 +53,7 @@ Fence::~Fence() {
 }
 
 void Fence::cleanup() {
-	vkDestroyFence(_device.device(), _fence, nullptr);
+	vkDestroyFence(_device.handle(), _fence, nullptr);
 }
 
 Fence::Fence(Fence&& other) noexcept : _device(other._device), _flags(other._flags), _fence(other._fence) {
