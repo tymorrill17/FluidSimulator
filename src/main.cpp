@@ -195,9 +195,9 @@ int main(int argc, char* argv[]) {
 
 			// HERE is where I would redo the DescriptorWriter calls to updateDescriptors with the updated buffer/offset size?
 			// Update/fill buffers
-			globalBuffer.writeBuffer(&globalBufferObject);
-			globalParticleBuffer.writeBuffer(&particleInfo);
-			particleBuffer.writeBuffer(fluidParticles.particles());
+			globalBuffer.writeData(&globalBufferObject);
+			globalParticleBuffer.writeData(&particleInfo);
+			particleBuffer.writeData(fluidParticles.particles());
 
 			app->renderer().renderAllSystems();
 

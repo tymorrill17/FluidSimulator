@@ -1,6 +1,6 @@
 #include "renderer/buffer.h"
 
-Buffer::Buffer(const Device& device, const Allocator& allocator, size_t instanceSize,
+Buffer::Buffer(Device& device, Allocator& allocator, size_t instanceSize,
 	uint32_t instanceCount, VkBufferUsageFlags usageFlags,
 	VmaMemoryUsage memoryUsage, size_t minOffsetAlignment) :
 	_device(device),
@@ -10,7 +10,7 @@ Buffer::Buffer(const Device& device, const Allocator& allocator, size_t instance
 	_bufferSize(instanceSize*instanceCount),
 	_instanceCount(instanceCount),
 	_instanceSize(instanceSize) {
-	
+
 	_alignmentSize = findAlignmentSize(_instanceSize, minOffsetAlignment);
 
 	VkBufferCreateInfo bufferCreateInfo{
@@ -48,22 +48,23 @@ void Buffer::unmap() {
 	}
 }
 
-void Buffer::writeBuffer(void* data, size_t size, size_t offset) {
+void Buffer::writeData(void* data, size_t size, size_t offset) {
 	if (!_mappedData) {
 		throw std::runtime_error("Trying to write to an unmapped buffer!");
 	}
 
+    // If we are writing to all of _mappedData, a simple memcpy is sufficient
 	if (size == VK_WHOLE_SIZE) {
 		memcpy(_mappedData, data, _bufferSize);
-	} else {
+	} else { // otherwise, use the offset and size to find a subsection of mapped data and then a memcpy
 		char* memOffset = (char*)_mappedData;
 		memOffset += offset;
 		memcpy(memOffset, data, size);
 	}
 }
 
-void Buffer::writeBufferAtIndex(void* data, int index) {
-	writeBuffer(data, _instanceSize, index * _alignmentSize);
+void Buffer::writeDataAtIndex(void* data, int index) {
+	writeData(data, _instanceSize, index * _alignmentSize);
 }
 
 size_t Buffer::findAlignmentSize(size_t instanceSize, size_t minOffsetAlignment) {

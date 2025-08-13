@@ -8,39 +8,39 @@
 
 class Buffer : public NonCopyable {
 public:
-	Buffer(const Device& device, const Allocator& allocator, size_t instanceSize,
+	Buffer(Device& device, Allocator& allocator, size_t instanceSize,
 		uint32_t instanceCount, VkBufferUsageFlags usageFlags,
 		VmaMemoryUsage memoryUsage, size_t minOffsetAlignment = 1);
 	~Buffer();
 
 	// @brief Maps CPU-accessible pointer to the buffer on the GPU
 	void map();
+
 	// @brief Unmap the CPU-accessible pointer
 	void unmap();
 
 	// @brief Writes data to the buffer. The data written is either the entire capacity, or a specified size and offset
-	//
 	// @param data - The data to be written to the buffer
-	// @param size - The size of the data to be written
-	// @param offset - Amount to offset the writing in the buffer
-	void writeBuffer(void* data, size_t size = VK_WHOLE_SIZE, size_t offset = 0);
+	// @param size - (optional) The size of the data to be written
+	// @param offset - (optional) Amount to offset the writing in the buffer
+	void writeData(void* data, size_t size = VK_WHOLE_SIZE, size_t offset = 0);
+
 	// @brief Writes an instance of the buffer's data at the index
-	//
 	// @param data - The data to be written to the buffer
 	// @param index - Which instance to write to
-	void writeBufferAtIndex(void* data, int index);
+	void writeDataAtIndex(void* data, int index);
 
-	inline VkBuffer buffer() const { return _buffer; }
-	inline VmaAllocation allocation() const { return _allocation; }
-	inline VmaAllocationInfo allocationInfo() const { return _allocationInfo; }
-	inline size_t bufferSize() const { return _bufferSize; }
-	inline uint32_t instanceCount() const { return _instanceCount; }
-	inline size_t instanceSize() const { return _instanceSize; }
-	inline size_t alignmentSize() const { return _alignmentSize; }
+	inline VkBuffer buffer() { return _buffer; }
+	inline VmaAllocation allocation() { return _allocation; }
+	inline VmaAllocationInfo allocationInfo() { return _allocationInfo; }
+	inline size_t bufferSize() { return _bufferSize; }
+	inline uint32_t instanceCount() { return _instanceCount; }
+	inline size_t instanceSize() { return _instanceSize; }
+	inline size_t alignmentSize() { return _alignmentSize; }
 
 private:
-	const Device& _device;
-	const Allocator& _allocator;
+	Device& _device;
+	Allocator& _allocator;
 
 	VkBuffer _buffer; // Vulkan buffer object
 	VmaAllocation _allocation; // vma allocation object

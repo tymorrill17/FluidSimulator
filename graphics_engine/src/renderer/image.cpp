@@ -1,183 +1,9 @@
 #include "renderer/image.h"
 
+// Image --------------------------------------------------------------------------------------------------
+
 Image::Image(VkImage image, VkImageView imageView, VkExtent3D extent, VkFormat format, VkImageLayout imageLayout) :
 	_image(image), _imageView(imageView), _extent(extent), _format(format), _imageLayout(imageLayout) {}
-
-void AllocatedImage::createAllocatedImage() {
-	VkImageCreateInfo imageInfo{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.pNext = nullptr,
-		.imageType = VK_IMAGE_TYPE_2D, // Need to change this if I need 3D images
-		.format = _format,
-		.extent = _extent,
-		.mipLevels = 1,
-		.arrayLayers = 1,
-		.samples = VK_SAMPLE_COUNT_1_BIT, // Only applicable for target images
-		.tiling = VK_IMAGE_TILING_OPTIMAL,
-		.usage = _usageFlags
-	};
-
-	VmaAllocationCreateInfo allocInfo{
-		.usage = _memoryUsage,
-		.requiredFlags = static_cast<VkMemoryPropertyFlags>(_vkMemoryUsage)
-	};
-
-	if (vmaCreateImage(_allocator.handle(), &imageInfo, &allocInfo, &_image, &_allocation, nullptr) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create and allocate image!");
-	}
-
-	VkImageSubresourceRange subresourceRange{
-		.aspectMask = _aspectFlags,
-		.baseMipLevel = 0,
-		.levelCount = 1,
-		.baseArrayLayer = 0,
-		.layerCount = 1
-	};
-
-	VkImageViewCreateInfo imageViewInfo{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.pNext = nullptr,
-		.image = _image,
-		.viewType = VK_IMAGE_VIEW_TYPE_2D,
-		.format = _format,
-		.subresourceRange = subresourceRange
-	};
-
-	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create allocated image view!");
-	}
-}
-
-AllocatedImage::AllocatedImage(Device& device, const Allocator& allocator) :
-	Image(VK_NULL_HANDLE, VK_NULL_HANDLE, {0, 0, 0}, VK_FORMAT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED),
-	_device(device), _allocator(allocator), _allocation(nullptr), _usageFlags(0), _memoryUsage(VMA_MEMORY_USAGE_UNKNOWN),
-	_vkMemoryUsage(VMA_MEMORY_USAGE_UNKNOWN), _aspectFlags(VK_IMAGE_ASPECT_NONE) {}
-
-AllocatedImage::AllocatedImage(Device& device, const Allocator& allocator,
-	VkExtent3D extent, VkFormat format, VkImageUsageFlags usageFlags,
-	VmaMemoryUsage memoryUsage, VkMemoryAllocateFlags vkMemoryUsage,
-	VkImageAspectFlags aspectFlags) :
-	Image(VK_NULL_HANDLE, VK_NULL_HANDLE, extent, format, VK_IMAGE_LAYOUT_UNDEFINED),
-	_device(device), _allocator(allocator), _allocation(nullptr), _usageFlags(usageFlags),
-	_memoryUsage(memoryUsage), _vkMemoryUsage(vkMemoryUsage), _aspectFlags(aspectFlags) {
-
-	createAllocatedImage();
-}
-
-void AllocatedImage::cleanup() {
-	vkDestroyImageView(_device.handle(), _imageView, nullptr);
-	vmaDestroyImage(_allocator.handle(), _image, _allocation);
-}
-
-AllocatedImage::AllocatedImage(AllocatedImage&& other) noexcept :
-	Image(other._image, other._imageView, other._extent, other._format, other._imageLayout),
-	_device(other._device), _allocator(other._allocator), _allocation(other._allocation),
-	_usageFlags(other._usageFlags), _memoryUsage(other._memoryUsage), _vkMemoryUsage(other._vkMemoryUsage),
-	_aspectFlags(other._aspectFlags) {
-	other._allocation = nullptr;
-	other._image = VK_NULL_HANDLE;
-	other._imageView = VK_NULL_HANDLE;
-	other._imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	other._extent = { 0, 0, 0 };
-	other._format = VK_FORMAT_UNDEFINED;
-}
-
-AllocatedImage& AllocatedImage::operator=(AllocatedImage&& other) noexcept {
-	if (this != &other) {
-		// Clean up current object
-		cleanup();
-
-		_image = other._image;
-		_imageView = other._imageView;
-		_imageLayout = other._imageLayout;
-		_extent = other._extent;
-		_format = other._format;
-		_allocation = other._allocation;
-		_usageFlags = other._usageFlags;
-		_memoryUsage = other._memoryUsage;
-		_vkMemoryUsage = other._vkMemoryUsage;
-		_aspectFlags = other._aspectFlags;
-
-		other._image = VK_NULL_HANDLE;
-		other._imageView = VK_NULL_HANDLE;
-		other._imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		other._extent = { 0, 0, 0 };
-		other._format = VK_FORMAT_UNDEFINED;
-		other._allocation = nullptr;
-	}
-	return *this;
-}
-
-void AllocatedImage::recreate(VkExtent3D extent) {
-	cleanup();
-	_extent = extent;
-	_imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	_imageView = VK_NULL_HANDLE;
-	createAllocatedImage();
-}
-
-SwapchainImage::SwapchainImage(Device& device) :
-	Image(VK_NULL_HANDLE, VK_NULL_HANDLE, {0, 0, 0}, VK_FORMAT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED), _device(device) {}
-
-SwapchainImage::SwapchainImage(Device& device, VkImage image, VkExtent3D extent,
-	VkFormat format) :
-	Image(image, VK_NULL_HANDLE, extent, format, VK_IMAGE_LAYOUT_UNDEFINED), _device(device) {
-
-	// Create associated image view. This is going to be a color aspect image view
-	VkImageSubresourceRange subresourceRange{
-		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseMipLevel = 0,
-		.levelCount = 1,
-		.baseArrayLayer = 0,
-		.layerCount = 1
-	};
-
-	VkImageViewCreateInfo imageViewInfo{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.pNext = nullptr,
-		.image = _image,
-		.viewType = VK_IMAGE_VIEW_TYPE_2D,
-		.format = _format,
-		.subresourceRange = subresourceRange
-	};
-
-	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create swapchain image view!");
-	}
-}
-
-void SwapchainImage::cleanup() {
-	vkDestroyImageView(_device.handle(), _imageView, nullptr);
-}
-
-SwapchainImage::SwapchainImage(SwapchainImage&& other) noexcept :
-	Image(other._image, other._imageView, other._extent, other._format, other._imageLayout), _device(other._device) {
-	other._image = VK_NULL_HANDLE;
-	other._imageView = VK_NULL_HANDLE;
-	other._imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	other._extent = { 0, 0, 0 };
-	other._format = VK_FORMAT_UNDEFINED;
-}
-
-SwapchainImage& SwapchainImage::operator=(SwapchainImage&& other) noexcept {
-	if (this != &other) {
-		// Clean up current object
-		cleanup();
-
-		_image = other._image;
-		_imageView = other._imageView;
-		_imageLayout = other._imageLayout;
-		_extent = other._extent;
-		_format = other._format;
-
-		other._image = VK_NULL_HANDLE;
-		other._imageView = VK_NULL_HANDLE;
-		other._imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		other._extent = { 0, 0, 0 };
-		other._format = VK_FORMAT_UNDEFINED;
-	}
-	return *this;
-}
 
 void Image::transitionImage(Command& cmd, VkImageLayout newLayout) {
 	VkImageAspectFlags aspectMask = (newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
@@ -265,3 +91,109 @@ VkRenderingAttachmentInfoKHR Image::attachmentInfo(VkImageView imageView, VkClea
 	if (pClear) renderingAttachmentInfo.clearValue = *pClear;
 	return renderingAttachmentInfo;
 }
+
+// AllocatedImage --------------------------------------------------------------------------------------------------
+
+void AllocatedImage::createAllocatedImage() {
+	VkImageCreateInfo imageInfo{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.pNext = nullptr,
+		.imageType = VK_IMAGE_TYPE_2D, // Need to change this if I need 3D images
+		.format = _format,
+		.extent = _extent,
+		.mipLevels = 1,
+		.arrayLayers = 1,
+		.samples = VK_SAMPLE_COUNT_1_BIT, // Only applicable for target images
+		.tiling = VK_IMAGE_TILING_OPTIMAL,
+		.usage = _usageFlags
+	};
+
+	VmaAllocationCreateInfo allocInfo{
+		.usage = _memoryUsage,
+		.requiredFlags = static_cast<VkMemoryPropertyFlags>(_vkMemoryUsage)
+	};
+
+	if (vmaCreateImage(_allocator.handle(), &imageInfo, &allocInfo, &_image, &_allocation, nullptr) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create and allocate image!");
+	}
+
+	VkImageSubresourceRange subresourceRange{
+		.aspectMask = _aspectFlags,
+		.baseMipLevel = 0,
+		.levelCount = 1,
+		.baseArrayLayer = 0,
+		.layerCount = 1
+	};
+
+	VkImageViewCreateInfo imageViewInfo{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.pNext = nullptr,
+		.image = _image,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D,
+		.format = _format,
+		.subresourceRange = subresourceRange
+	};
+
+	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create allocated image view!");
+	}
+}
+
+AllocatedImage::AllocatedImage(Device& device, Allocator& allocator,
+	VkExtent3D extent, VkFormat format, VkImageUsageFlags usageFlags,
+	VmaMemoryUsage memoryUsage, VkMemoryAllocateFlags vkMemoryUsage,
+	VkImageAspectFlags aspectFlags) :
+	Image(VK_NULL_HANDLE, VK_NULL_HANDLE, extent, format, VK_IMAGE_LAYOUT_UNDEFINED),
+	_device(device), _allocator(allocator), _allocation(nullptr), _usageFlags(usageFlags),
+	_memoryUsage(memoryUsage), _vkMemoryUsage(vkMemoryUsage), _aspectFlags(aspectFlags) {
+
+	createAllocatedImage();
+}
+
+void AllocatedImage::cleanup() {
+	vkDestroyImageView(_device.handle(), _imageView, nullptr);
+	vmaDestroyImage(_allocator.handle(), _image, _allocation);
+}
+
+void AllocatedImage::recreate(VkExtent3D extent) {
+	cleanup();
+	_extent = extent;
+	_imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	_imageView = VK_NULL_HANDLE;
+	createAllocatedImage();
+}
+
+// SwapchainImage --------------------------------------------------------------------------------------------------
+
+SwapchainImage::SwapchainImage(Device& device, VkImage image, VkExtent3D extent,
+	VkFormat format) :
+	Image(image, VK_NULL_HANDLE, extent, format, VK_IMAGE_LAYOUT_UNDEFINED), _device(device) {
+
+	// Create associated image view. This is going to be a color aspect image view
+	VkImageSubresourceRange subresourceRange{
+		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		.baseMipLevel = 0,
+		.levelCount = 1,
+		.baseArrayLayer = 0,
+		.layerCount = 1
+	};
+
+	VkImageViewCreateInfo imageViewInfo{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.pNext = nullptr,
+		.image = _image,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D,
+		.format = _format,
+		.subresourceRange = subresourceRange
+	};
+
+	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create swapchain image view!");
+	}
+}
+
+void SwapchainImage::cleanup() {
+	vkDestroyImageView(_device.handle(), _imageView, nullptr);
+}
+
+
