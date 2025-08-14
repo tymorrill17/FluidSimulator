@@ -21,7 +21,7 @@ void Swapchain::createSwapchain() {
 
     bool physicalDeviceAdequate = !_supportDetails.formats.empty() && !_supportDetails.presentModes.empty();
     if (!physicalDeviceAdequate) {
-        throw std::runtime_error("The physical device does not have sufficient swapchain support!");
+        Logger::logError("The physical device does not have sufficient swapchain support!");
     }
 
 	// Select the format and present modes of the swapchain
@@ -71,7 +71,7 @@ void Swapchain::createSwapchain() {
 	}
 
 	if (vkCreateSwapchainKHR(_device.handle(), &swapchainCreateInfo, nullptr, &_swapchain) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create swapchain!");
+        Logger::logError("Failed to create swapchain!");
 	}
 
     std::cout << "Swapchain successfully created!" << std::endl;
@@ -108,7 +108,7 @@ void Swapchain::acquireNextImage(Semaphore* semaphore, Fence* fence) {
     if (e == VK_ERROR_OUT_OF_DATE_KHR) { // This is a point of entry for the information that the window has been resized.
         _resizeRequested = true;
     } else if(e != VK_SUCCESS) {
-        throw std::runtime_error("Failed to acquire next swapchain image!");
+        Logger::logError("Failed to acquire next swapchain image!");
     }
 }
 
@@ -127,7 +127,7 @@ void Swapchain::presentToScreen(VkQueue queue, Frame& frame, uint32_t imageIndex
     if (e == VK_ERROR_OUT_OF_DATE_KHR || e == VK_SUBOPTIMAL_KHR) { // This is a point of entry for the information that the window has been resized.
         _resizeRequested = true;
     } else if (e != VK_SUCCESS) {
-        throw std::runtime_error("Failed to present to screen!");
+        Logger::logError("Failed to present to screen!");
     }
 }
 

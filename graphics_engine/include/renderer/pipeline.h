@@ -1,5 +1,6 @@
 #pragma once
 #include "vulkan/vulkan.h"
+#include "utility/logger.h"
 #include "NonCopyable.h"
 #include "device.h"
 

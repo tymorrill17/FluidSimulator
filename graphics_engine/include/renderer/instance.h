@@ -1,6 +1,7 @@
 #pragma once
 #include "vulkan/vulkan.h"
 #include "NonCopyable.h"
+#include "utility/logger.h"
 #include "utility/window.h"
 #include "utility/logger.h"
 #include "utility/debug_messenger.h"

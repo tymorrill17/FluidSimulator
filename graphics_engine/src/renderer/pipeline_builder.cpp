@@ -60,7 +60,7 @@ Pipeline PipelineBuilder::buildPipeline() {
 
     VkPipeline vkPipeline;
     if (vkCreateGraphicsPipelines(_device.handle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create pipeline");
+        Logger::logError("Failed to create pipeline");
     }
 
     Pipeline newPipeline(&_device, vkPipeline, layout);

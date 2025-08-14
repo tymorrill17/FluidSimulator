@@ -1,4 +1,5 @@
 #include "utility/window.h"
+#include "utility/logger.h"
 
 Window::Window(glm::ivec2 dimensions, const std::string& name) :
 	_windowExtent{ static_cast<uint32_t>(dimensions.x), static_cast<uint32_t>(dimensions.y) },
@@ -29,7 +30,7 @@ Window::Window(glm::ivec2 dimensions, const std::string& name) :
         std::cout << "Created a window titled \"" << name << "\" of size " << _windowExtent.width << "x" << _windowExtent.height << "." << std::endl;
 	}
 	else {
-		throw std::runtime_error("Window creation failure!");
+        Logger::logError("Window creation failure!");
 	}
 
 	_window = window;
@@ -64,7 +65,7 @@ void Window::createSurface(VkInstance instance) {
 	_instance = instance;
 
 	if (!SDL_Vulkan_CreateSurface(_window, instance, &_surface)) {
-		throw std::runtime_error("Failed to create window surface!");
+        Logger::logError("Failed to create window surface!");
 	}
 
 	std::cout << "Created SDL window surface for Vulkan" << std::endl;

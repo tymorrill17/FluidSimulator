@@ -68,7 +68,7 @@ Device::Device(Instance& instance, Window& window, const std::vector<const char*
 	};
 
 	if (vkCreateDevice(_physDevice, &deviceCreateInfo, nullptr, &_logicalDevice) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create logical device!");
+        Logger::logError("Failed to create logical device!");
 	}
     std::cout << "Vulkan device successfully created." << std::endl;
 
@@ -127,7 +127,7 @@ VkPhysicalDevice Device::selectPhysicalDevice(VkInstance instance, VkSurfaceKHR 
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
 	if (deviceCount == 0)
-		throw std::runtime_error("Failed to find any GPU with Vulkan support!");
+		Logger::logError("Failed to find any GPU with Vulkan support!");
 
     std::cout << "Selecting physical device..." << std::endl;
 

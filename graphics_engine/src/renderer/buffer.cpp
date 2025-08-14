@@ -26,7 +26,7 @@ Buffer::Buffer(Device& device, Allocator& allocator, size_t instanceSize,
 	};
 
 	if (vmaCreateBuffer(_allocator.handle(), &bufferCreateInfo, &allocationCreateInfo, &_buffer, &_allocation, &_allocationInfo) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create allocated buffer!");
+        Logger::logError("Failed to create allocated buffer!");
 	}
 }
 
@@ -37,7 +37,7 @@ Buffer::~Buffer() {
 
 void Buffer::map() {
 	if (vmaMapMemory(_allocator.handle(), _allocation, &_mappedData) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to map memory to the buffer!");
+        Logger::logError("Failed to map memory to the buffer!");
 	}
 }
 
@@ -50,7 +50,7 @@ void Buffer::unmap() {
 
 void Buffer::writeData(void* data, size_t size, size_t offset) {
 	if (!_mappedData) {
-		throw std::runtime_error("Trying to write to an unmapped buffer!");
+        Logger::logError("Trying to write to an unmapped buffer!");
 	}
 
     // If we are writing to all of _mappedData, a simple memcpy is sufficient

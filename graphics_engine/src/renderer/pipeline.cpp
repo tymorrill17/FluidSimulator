@@ -60,7 +60,7 @@ VkPipelineLayoutCreateInfo PipelineLayout::pipelineLayoutCreateInfo(const std::v
 VkPipelineLayout PipelineLayout::createPipelineLayout(Device& device, VkPipelineLayoutCreateInfo createInfo) {
 	VkPipelineLayout pipelineLayout;
 	if (vkCreatePipelineLayout(device.handle(), &createInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create pipeline layout!");
+        Logger::logError("Failed to create pipeline layout!");
 	}
 	return pipelineLayout;
 }

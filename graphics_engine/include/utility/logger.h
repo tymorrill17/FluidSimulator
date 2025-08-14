@@ -3,8 +3,15 @@
 #include "renderer/queue_family.h"
 #include <vector>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 namespace Logger {
+    // @brief Log error to stderr
+    void logError(const char* errorMessage);
+    void logError(std::stringstream errorMessage);
+    void logError(std::string errorMessage);
+
 	// @brief Print a list of strings
 	void printList(std::vector<const char*>& list);
 

@@ -15,7 +15,7 @@ CommandPool::CommandPool(Device& device, VkCommandPoolCreateFlags flags) :
 	};
 
     if (vkCreateCommandPool(_device.handle(), &commandPoolCreateInfo, nullptr, &_commandPool) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create command pool!");
+        Logger::logError("Failed to create command pool!");
 	}
 }
 
@@ -61,7 +61,7 @@ void Command::allocateCommandBuffer(VkCommandBufferLevel level) {
 		.commandBufferCount = 1,
 	};
 	if (vkAllocateCommandBuffers(_device.handle(), &allocateInfo, &_commandBuffer) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to allocate command buffer!");
+        Logger::logError("Failed to allocate command buffer!");
 	}
 }
 
@@ -77,28 +77,28 @@ VkCommandBufferBeginInfo Command::commandBufferBeginInfo(VkCommandBufferUsageFla
 
 void Command::begin() {
 	if (_inProgress) {
-		throw std::runtime_error("Command buffer already begun!");
+        Logger::logError("Command buffer already begun!");
 	}
 	VkCommandBufferBeginInfo beginInfo = commandBufferBeginInfo();
 	if (vkBeginCommandBuffer(_commandBuffer, &beginInfo) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to begin command buffer!");
+        Logger::logError("Failed to begin command buffer!");
 	}
 	_inProgress = true;
 }
 
 void Command::end() {
 	if (!_inProgress) {
-		throw std::runtime_error("Can't end a command buffer that has not begun!");
+        Logger::logError("Can't end a command buffer that has not begun!");
 	}
 	if (vkEndCommandBuffer(_commandBuffer) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to end command buffer!");
+        Logger::logError("Failed to end command buffer!");
 	}
 	_inProgress = false;
 }
 
 void Command::reset(VkCommandBufferResetFlags flags) const {
 	if (vkResetCommandBuffer(_commandBuffer, flags) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to reset the command buffer!");
+        Logger::logError("Failed to reset the command buffer!");
 	}
 }
 
@@ -140,7 +140,7 @@ void Command::submitToQueue(VkQueue queue, Frame& frame) {
 	};
 
 	if (vkQueueSubmit2(queue, 1, &submitInfo, frame.renderFence().handle()) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to submit commands to queue!");
+        Logger::logError("Failed to submit commands to queue!");
 	}
 }
 
@@ -188,6 +188,6 @@ void ImmediateCommand::submitToQueue(VkQueue queue) {
 	};
 
 	if (vkQueueSubmit2(queue, 1, &submitInfo, _submitFence.handle()) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to submit commands to queue!");
+        Logger::logError("Failed to submit commands to queue!");
 	}
 }

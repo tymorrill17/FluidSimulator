@@ -2,7 +2,8 @@
 #include "vulkan/vulkan.h"
 #include "vma/vk_mem_alloc.h"
 #include "utility/allocator.h"
-#include "command.h"
+#include "renderer/command.h"
+#include "utility/logger.h"
 #include "NonCopyable.h"
 
 // Base image class

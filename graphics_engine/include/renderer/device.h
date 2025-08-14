@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include "utility/logger.h"
 #include "device.h"
 #include "instance.h"
 #include "utility/window.h"

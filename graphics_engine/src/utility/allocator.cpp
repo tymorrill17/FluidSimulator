@@ -9,7 +9,7 @@ Allocator::Allocator(Device& device, Instance& instance) : _device(device), _ins
 		.instance = _instance.handle()
 	};
 	if (vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create the VMA allocator!");
+        Logger::logError("Failed to create the VMA allocator!");
 	}
 }
 

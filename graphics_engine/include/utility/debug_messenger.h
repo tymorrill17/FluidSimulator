@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include "utility/logger.h"
 #include "renderer/instance.h"
 #include "NonCopyable.h"
 #include <iostream>

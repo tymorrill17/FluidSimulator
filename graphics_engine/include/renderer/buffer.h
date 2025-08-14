@@ -1,6 +1,7 @@
 #pragma once
 #include "NonCopyable.h"
 #include "vulkan/vulkan.h"
+#include "utility/logger.h"
 #include "vma/vk_mem_alloc.h"
 #include "device.h"
 #include "utility/allocator.h"

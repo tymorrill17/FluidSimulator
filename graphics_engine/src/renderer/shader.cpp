@@ -1,4 +1,5 @@
 #include "renderer/shader.h"
+#include "utility/logger.h"
 
 Shader::Shader(Device& device, const std::string& filepath, VkShaderStageFlagBits stageFlag)
 	: _device(device),
@@ -10,7 +11,7 @@ Shader::Shader(Device& device, const std::string& filepath, VkShaderStageFlagBit
 	if (!file.is_open()) {
 		std::stringstream line;
 		line << "ERROR: Shader file does not exist: " << filepath << std::endl;
-		throw std::runtime_error(line.str());
+        Logger::logError(line.str());
 	}
 
 	// Since cursor is at the end, use it to find the size of the file, then copy the entire shader into a vector of uint32_t
@@ -32,7 +33,7 @@ Shader::Shader(Device& device, const std::string& filepath, VkShaderStageFlagBit
 	if (vkCreateShaderModule(device.handle(), &createinfo, nullptr, &_shaderModule) != VK_SUCCESS) {
 		std::stringstream line;
 		line << "Error: vkCreateShaderModule() failed while creating " << filepath << std::endl;
-		throw std::runtime_error(line.str());
+        Logger::logError(line.str());
 	}
 	std::cout << "Shader successfully loaded: " << filepath << std::endl;
 }

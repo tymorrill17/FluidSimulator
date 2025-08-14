@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
+#include "utility/logger.h"
 #include <glm/vec2.hpp>
 #include "NonCopyable.h"
 #include <string>

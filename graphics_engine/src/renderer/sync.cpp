@@ -7,7 +7,7 @@ Semaphore::Semaphore(Device& device, VkSemaphoreCreateFlags flags) : _device(dev
 		.flags = _flags
 	};
 	if (vkCreateSemaphore(_device.handle(), &semaphoreInfo, nullptr, &_semaphore) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create semaphore!");
+        Logger::logError("Failed to create semaphore!");
 	}
 }
 
@@ -22,7 +22,7 @@ Fence::Fence(Device& device, VkFenceCreateFlags flags) : _device(device), _flags
 		.flags = _flags,
 	};
 	if (vkCreateFence(_device.handle(), &fenceInfo, nullptr, &_fence) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create fence!");
+        Logger::logError("Failed to create fence!");
 	}
 }
 

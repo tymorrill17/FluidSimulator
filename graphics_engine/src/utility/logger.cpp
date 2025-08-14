@@ -1,4 +1,17 @@
 #include "utility/logger.h"
+#include <iostream>
+
+void Logger::logError(const char* errorMessage) {
+    std::cerr << errorMessage << std::endl;
+}
+
+void Logger::logError(std::stringstream errorMessage) {
+    std::cerr << errorMessage.str() << std::endl;
+}
+
+void Logger::logError(std::string errorMessage) {
+    std::cerr << errorMessage << std::endl;
+}
 
 void Logger::printLayers(const char* layerCategory, std::vector<VkLayerProperties>& layers) {
 	std::cout << layerCategory << std::endl;

@@ -13,7 +13,7 @@ Instance::Instance(const char* appName, const char* engineName, bool enableValid
 	instance(VK_NULL_HANDLE) {
 
 	if (enableValidationLayers && !checkValidationLayerSupport()) {
-		throw std::runtime_error("Validation layers requested, but are not supported!");
+        Logger::logError("Validation layers requested, but are not supported!");
 	}
 
 	// Find version of Vulkan
@@ -58,7 +58,7 @@ Instance::Instance(const char* appName, const char* engineName, bool enableValid
 	}
 
 	if (vkCreateInstance(&instanceCreateInfo, nullptr, &instance) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create a Vulkan instance!");
+        Logger::logError("Failed to create a Vulkan instance!");
 	}
 
     std::cout << "Created Vulkan instance." << std::endl;

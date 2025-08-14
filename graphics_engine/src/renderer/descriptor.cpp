@@ -18,7 +18,7 @@ DescriptorPool::DescriptorPool(Device& device, uint32_t maxSets, std::span<PoolS
 		.pPoolSizes = poolSizes.data()
 	};
 	if (vkCreateDescriptorPool(_device.handle(), &descriptorPoolCreateInfo, nullptr, &_descriptorPool) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create descriptor pool!");
+        Logger::logError("Failed to create descriptor pool!");
 	}
 }
 
@@ -40,7 +40,7 @@ VkDescriptorSet DescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout layo
 	};
 	VkDescriptorSet set;
 	if (vkAllocateDescriptorSets(_device.handle(), &allocInfo, &set) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to allocate descriptor sets!");
+        Logger::logError("Failed to allocate descriptor sets!");
 	}
 	return set;
 }
@@ -75,7 +75,7 @@ VkDescriptorSetLayout DescriptorLayoutBuilder::build() {
 	};
 	VkDescriptorSetLayout layout;
 	if (vkCreateDescriptorSetLayout(_device.handle(), &descriptorSetLayoutCreateInfo, nullptr, &layout) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to build descriptor set layout!");
+        Logger::logError("Failed to build descriptor set layout!");
 	}
 	return layout;
 }

@@ -11,12 +11,12 @@ DebugMessenger::DebugMessenger(Instance& instance) : instance(instance), debugMe
 		auto createFunc = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance.handle(), "vkCreateDebugUtilsMessengerEXT");
 
 		if (!createFunc) {
-			throw std::runtime_error("Debug messenger extension not available!");
+            Logger::logError("Debug messenger extension not available!");
 		}
 
 		// Actually create the debug messenger
 		if (createFunc(instance.handle(), &debugInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create debug messenger!");
+            Logger::logError("Failed to create debug messenger!");
 		}
 
         std::cout << "Created debug messenger." << std::endl;

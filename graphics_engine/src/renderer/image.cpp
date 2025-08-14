@@ -114,7 +114,7 @@ void AllocatedImage::createAllocatedImage() {
 	};
 
 	if (vmaCreateImage(_allocator.handle(), &imageInfo, &allocInfo, &_image, &_allocation, nullptr) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create and allocate image!");
+        Logger::logError("Failed to create and allocate image!");
 	}
 
 	VkImageSubresourceRange subresourceRange{
@@ -135,7 +135,7 @@ void AllocatedImage::createAllocatedImage() {
 	};
 
 	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create allocated image view!");
+        Logger::logError("Failed to create allocated image view!");
 	}
 }
 
@@ -188,7 +188,7 @@ SwapchainImage::SwapchainImage(Device& device, VkImage image, VkExtent3D extent,
 	};
 
 	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create swapchain image view!");
+        Logger::logError("Failed to create swapchain image view!");
 	}
 }
 
