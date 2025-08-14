@@ -15,7 +15,6 @@ public:
 	inline VkShaderStageFlagBits stage() const { return _shaderStageFlag; }
 
 	// @brief Populates a pipeline shader stage create info struct
-	//
 	// @param flags - Bit flags to enable in the create info struct
 	// @param shader - Shader module to be added to the pipeline
 	static VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shader);

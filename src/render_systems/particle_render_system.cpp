@@ -1,4 +1,5 @@
 #include "render_systems/particle_render_system.h"
+#include <iostream>
 
 void ParticleRenderSystem::buildPipeline() {
 
@@ -23,7 +24,7 @@ void ParticleRenderSystem::buildPipeline() {
 		.addDescriptors(_particleDescriptors)
 		.buildPipeline();
 
-	_pipelines.push_back(std::move(pipeline));
+    _pipelines.push_back(std::move(pipeline));
 }
 
 ParticleRenderSystem::ParticleRenderSystem(Renderer& renderer, std::vector<VkDescriptorSetLayout> particleDescriptorLayout, std::vector<VkDescriptorSet> particleDescriptorSets, ParticleSystem2D& particleSystem) :

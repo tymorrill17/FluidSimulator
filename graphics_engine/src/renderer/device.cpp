@@ -1,4 +1,5 @@
 #include "renderer/device.h"
+#include "renderer/queue_family.h"
 #include "renderer/swapchain.h"
 #include <iostream>
 
@@ -31,7 +32,7 @@ Device::Device(Instance& instance, Window& window, const std::vector<const char*
     Logger::log(_physDeviceProperties);
 
 	// Find the queue families and assign their indices
-	_indices = QueueFamily::findQueueFamilies(_physDevice, _window.surface());
+	_indices = QueueFamilyIndices::findQueueFamilies(_physDevice, _window.surface());
 	Logger::log(_indices);
 	std::set<uint32_t> uniqueQueueFamilies = { _indices.graphicsFamily.value(), _indices.presentFamily.value() };
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -109,7 +110,7 @@ bool Device::checkDeviceExtensionSupport(VkPhysicalDevice physicalDevice, std::v
 
 bool Device::isDeviceSuitable(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
 
-	QueueFamilyIndices indices = QueueFamily::findQueueFamilies(physicalDevice, surface);
+	QueueFamilyIndices indices = QueueFamilyIndices::findQueueFamilies(physicalDevice, surface);
 
 	bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, Instance::requestedDeviceExtensions);
 

@@ -1,4 +1,6 @@
 #include "renderer/pipeline.h"
+#include <iostream>
+#include <utility>
 
 Pipeline::Pipeline() :
 	_device(nullptr), _pipeline(VK_NULL_HANDLE), _pipelineLayout(VK_NULL_HANDLE) {}
@@ -9,12 +11,7 @@ Pipeline::Pipeline(Device* device, VkPipeline pipeline, VkPipelineLayout pipelin
 	_pipelineLayout(pipelineLayout) {}
 
 Pipeline::~Pipeline() {
-	cleanup();
-}
-
-void Pipeline::cleanup() {
 	if (!_device) return;
-
 	if (_pipelineLayout != VK_NULL_HANDLE) {
 		vkDestroyPipelineLayout(_device->handle(), _pipelineLayout, nullptr);
 		_pipelineLayout = VK_NULL_HANDLE;
@@ -25,26 +22,39 @@ void Pipeline::cleanup() {
 	}
 }
 
-Pipeline::Pipeline(Pipeline&& other) noexcept : _pipeline(other._pipeline), _pipelineLayout(other._pipelineLayout), _device(other._device) {
-	// Reset other pipeline's members
-	other._pipeline = VK_NULL_HANDLE;
-	other._pipelineLayout = VK_NULL_HANDLE;
+Pipeline::Pipeline(Pipeline&& other) noexcept :
+    _device(std::move(other._device)),
+    _pipeline(std::move(other._pipeline)),
+    _pipelineLayout(std::move(other._pipelineLayout)) {
+
+    other._device = nullptr;
+    other._pipeline = VK_NULL_HANDLE;
+    other._pipelineLayout = VK_NULL_HANDLE;
 }
+
 Pipeline& Pipeline::operator=(Pipeline&& other) noexcept {
-	if (this != &other) {
-		// Destroy existing resources
-		cleanup();
+    if (this != &other) {
+        _device = std::move(other._device);
+        _pipeline = std::move(other._pipeline);
+        _pipelineLayout = std::move(other._pipelineLayout);
+        other._device = nullptr;
+        other._pipeline = VK_NULL_HANDLE;
+        other._pipelineLayout = VK_NULL_HANDLE;
+    }
+    return *this;
+}
 
-		// Transfer ownership
-		_pipeline = other._pipeline;
-		_pipelineLayout = other._pipelineLayout;
-		// Keep the device reference intact (no need to reassign)
-
-		// Reset the moved-from object
-		other._pipeline = VK_NULL_HANDLE;
-		other._pipelineLayout = VK_NULL_HANDLE;
-	}
-	return *this;
+VkPipelineLayoutCreateInfo PipelineLayout::pipelineLayoutCreateInfo(const std::vector<VkDescriptorSetLayout>& setLayouts, const std::vector<VkPushConstantRange>& pushConstantRanges) {
+    VkPipelineLayoutCreateInfo createInfo{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .setLayoutCount = static_cast<uint32_t>(setLayouts.size()),
+            .pSetLayouts = setLayouts.data(),
+            .pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()),
+            .pPushConstantRanges = pushConstantRanges.data()
+    };
+    return createInfo;
 }
 
 VkPipelineLayout PipelineLayout::createPipelineLayout(Device& device, VkPipelineLayoutCreateInfo createInfo) {
@@ -53,18 +63,5 @@ VkPipelineLayout PipelineLayout::createPipelineLayout(Device& device, VkPipeline
 		throw std::runtime_error("Failed to create pipeline layout!");
 	}
 	return pipelineLayout;
-}
-
-VkPipelineLayoutCreateInfo PipelineLayout::pipelineLayoutCreateInfo(const std::vector<VkDescriptorSetLayout>& setLayouts, const std::vector<VkPushConstantRange>& pushConstantRanges) {
-	VkPipelineLayoutCreateInfo createInfo{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.setLayoutCount = static_cast<uint32_t>(setLayouts.size()),
-		.pSetLayouts = setLayouts.data(),
-		.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()),
-		.pPushConstantRanges = pushConstantRanges.data()
-	};
-	return createInfo;
 }
 

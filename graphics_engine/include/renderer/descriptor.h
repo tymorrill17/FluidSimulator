@@ -1,5 +1,4 @@
 #pragma once
-#include "NonCopyable.h"
 #include "vulkan/vulkan.h"
 #include "device.h"
 #include "buffer.h"
@@ -17,32 +16,31 @@ struct PoolSizeRatio {
 	float ratio;
 };
 
-class DescriptorPool : public NonCopyable {
+class DescriptorPool {
 public:
 	DescriptorPool(Device& device, uint32_t maxSets, std::span<PoolSizeRatio> poolSizeRatios);
 	~DescriptorPool();
 
-	// @brief Allocates a descriptor set using layout
-	//
+	// @brief Allocates a descriptor set from the given layout
 	// @param layout - Descriptor set layout to create the descriptor set with
+    // @return The resulting descriptor set
 	VkDescriptorSet allocateDescriptorSet(VkDescriptorSetLayout layout);
 
 	// @brief Clears the currently allocated descriptor sets
 	void clearDescriptorSets();
 
-	inline VkDescriptorPool pool() const { return _descriptorPool; }
+	inline VkDescriptorPool pool() { return _descriptorPool; }
 
 private:
 	Device& _device;
 	VkDescriptorPool _descriptorPool;
 };
 
-class DescriptorLayoutBuilder : public NonCopyable {
+class DescriptorLayoutBuilder {
 public:
 	DescriptorLayoutBuilder(Device& device);
 
 	// @brief Adds a binding and descriptor type to the descriptor layout builder
-	//
 	// @param binding - Which binding position to assign this to
 	// @param descriptorType - Which type of descriptor set to bind
 	// @param shaderStages - Which shader will use this descriptor set
@@ -57,30 +55,28 @@ public:
 
 private:
 	Device& _device;
-
 	std::vector<VkDescriptorSetLayoutBinding> _bindings;
 };
 
 // DescriptorWriter is for binding and writing the data to the GPU
-class DescriptorWriter : public NonCopyable{
+class DescriptorWriter {
 public:
 	DescriptorWriter(Device& device);
 
 	// @brief adds a VkDescriptorImageInfo to the imageInfos queue to be written using updateSet()
-	DescriptorWriter& addImageWrite(uint32_t binding, AllocatedImage& image, VkSampler sampler, VkDescriptorType descriptorType);
+	DescriptorWriter& addImage(uint32_t binding, AllocatedImage& image, VkSampler sampler, VkDescriptorType descriptorType);
 
 	// @brief adds a VkDescriptorBufferInfo to the bufferInfos queue to be written using updateSet()
-	DescriptorWriter& addBufferWrite(uint32_t binding, Buffer& buffer, VkDescriptorType descriptorType, size_t offset = 0, size_t bufferSize = VK_WHOLE_SIZE);
+	DescriptorWriter& addBuffer(uint32_t binding, Buffer& buffer, VkDescriptorType descriptorType, size_t offset = 0, size_t bufferSize = VK_WHOLE_SIZE);
 
 	// @brief clears the imageInfos, bufferInfos, and writes
 	DescriptorWriter& clear();
 
 	// @brief updates and writes the set using the infos in _imageInfos and _bufferInfos
-	DescriptorWriter& updateDescriptorSet(VkDescriptorSet descriptor);
+	DescriptorWriter& writeDescriptorSet(VkDescriptorSet descriptor);
 
 private:
 	Device& _device;
-
 	std::deque<VkDescriptorImageInfo> _imageInfos;
 	std::deque<VkDescriptorBufferInfo> _bufferInfos;
 	std::vector<VkWriteDescriptorSet> _writes;

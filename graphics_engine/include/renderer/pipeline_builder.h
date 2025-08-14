@@ -35,7 +35,6 @@ public:
 	void clear();
 
 	// @brief Build a Pipeline with the current chosen parameters of the PipelineBuilder
-	// TODO: possibly move this to the Pipeline class so that each type of pipeline can adjust how they're built?
 	Pipeline buildPipeline();
 
 	PipelineBuilder& setConfig(PipelineConfig config);

@@ -88,14 +88,27 @@ int main(int argc, char* argv[]) {
 		Buffer globalBuffer(app->renderer().device(), app->renderer().allocator(), sizeof(GlobalUBO), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, app->renderer().device().physicalDeviceProperies().limits.minUniformBufferOffsetAlignment);
 		globalBuffer.map();
 
-		VkDescriptorSetLayout particleLayouts = app->renderer().descriptorLayoutBuilder().addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS).addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS).build();
+		VkDescriptorSetLayout particleLayouts = app->renderer().descriptorLayoutBuilder()
+            .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
+            .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
+            .build();
 		VkDescriptorSet particleDescriptor = globalDescriptorPool.allocateDescriptorSet(particleLayouts);
-		app->renderer().descriptorWriter().addBufferWrite(0, globalParticleBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER).addBufferWrite(1, particleBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER).updateDescriptorSet(particleDescriptor).clear();
+		app->renderer().descriptorWriter()
+            .addBuffer(0, globalParticleBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            .addBuffer(1, particleBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+            .writeDescriptorSet(particleDescriptor)
+            .clear();
 		app->renderer().descriptorLayoutBuilder().clear();
 
-		VkDescriptorSetLayout globalLayout = app->renderer().descriptorLayoutBuilder().addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS).build();
+		VkDescriptorSetLayout globalLayout = app->renderer().descriptorLayoutBuilder()
+            .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
+            .build();
 		VkDescriptorSet globalDescriptor = globalDescriptorPool.allocateDescriptorSet(globalLayout);
-		app->renderer().descriptorWriter().addBufferWrite(0, globalBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER).updateDescriptorSet(globalDescriptor).clear();
+		app->renderer().descriptorWriter()
+            .addBuffer(0, globalBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            .writeDescriptorSet(globalDescriptor)
+            .clear();
+		app->renderer().descriptorLayoutBuilder().clear();
 
 		// Create the render systems and add them to the renderer
 		ParticleRenderSystem particleRenderSystem(app->renderer(), std::vector<VkDescriptorSetLayout>{particleLayouts, globalLayout}, std::vector<VkDescriptorSet>{particleDescriptor, globalDescriptor}, fluidParticles);

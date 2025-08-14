@@ -9,32 +9,22 @@ public:
 	Pipeline(Device* device, VkPipeline pipeline, VkPipelineLayout pipelineLayout);
 	~Pipeline();
 
-	// Write move constructors for the pipeline builder to function properly
-	Pipeline(Pipeline&& other) noexcept;
-	Pipeline& operator=(Pipeline&& other) noexcept;
+    Pipeline(Pipeline&&) noexcept;
+    Pipeline& operator=(Pipeline&&) noexcept;
 
-	inline const VkPipeline pipeline() const { return _pipeline; }
-	inline const VkPipelineLayout pipelineLayout() const { return _pipelineLayout; }
+	inline VkPipeline pipeline() { return _pipeline; }
+	inline VkPipelineLayout pipelineLayout() { return _pipelineLayout; }
 
 private:
-	// @brief The Vulkan render pipeline object
-	VkPipeline _pipeline;
-	// @brief The pipeline layout used for interacting with the pipeline
-	VkPipelineLayout _pipelineLayout;
-
-	// @brief Reference to the Vulkan device used to create the pipeline
-	Device* _device;
-
-	void cleanup();
+    Device* _device;
+    VkPipeline _pipeline; // The Vulkan render pipeline object
+	VkPipelineLayout _pipelineLayout; // The pipeline layout used for interacting with the pipeline
 };
 
-class PipelineLayout {
-public:
-
+namespace PipelineLayout {
 	// @brief Create a default, blank VkPipelineLayoutCreateInfo struct
-	static VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo(const std::vector<VkDescriptorSetLayout>& setLayouts = {}, const std::vector<VkPushConstantRange>& pushConstantRanges = {});
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo(const std::vector<VkDescriptorSetLayout>& setLayouts = {}, const std::vector<VkPushConstantRange>& pushConstantRanges = {});
 
 	// Creates a pipeline layout using the given create info
-	static VkPipelineLayout createPipelineLayout(Device& device, VkPipelineLayoutCreateInfo createInfo);
-
+	VkPipelineLayout createPipelineLayout(Device& device, VkPipelineLayoutCreateInfo createInfo);
 };

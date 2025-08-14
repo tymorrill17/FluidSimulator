@@ -3,6 +3,7 @@
 Shader::Shader(Device& device, const std::string& filepath, VkShaderStageFlagBits stageFlag)
 	: _device(device),
 	_shaderStageFlag(stageFlag) {
+
 	// std::ios::ate -> puts stream curser at end
 	// std::ios::binary -> opens file in binary mode
 	std::ifstream file(filepath, std::ios::ate | std::ios::binary);
@@ -11,12 +12,14 @@ Shader::Shader(Device& device, const std::string& filepath, VkShaderStageFlagBit
 		line << "ERROR: Shader file does not exist: " << filepath << std::endl;
 		throw std::runtime_error(line.str());
 	}
+
 	// Since cursor is at the end, use it to find the size of the file, then copy the entire shader into a vector of uint32_t
 	size_t filesize = (size_t)file.tellg(); // tellg() returns the position of the cursor
 	std::vector<uint32_t> buffer(filesize / sizeof(uint32_t));
 	file.seekg(0); // move cursor to beginning
 	file.read((char*)buffer.data(), filesize); // load entire file into the buffer
 	file.close();
+
 	// Now we have the entire shader in the buffer and can load it to Vulkan
 	VkShaderModuleCreateInfo createinfo{
 	.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,

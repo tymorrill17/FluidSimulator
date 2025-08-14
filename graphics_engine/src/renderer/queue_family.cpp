@@ -1,6 +1,6 @@
 #include "renderer/queue_family.h"
 
-QueueFamilyIndices QueueFamily::findQueueFamilies(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+QueueFamilyIndices QueueFamilyIndices::findQueueFamilies(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
 
 	QueueFamilyIndices indices;
 
