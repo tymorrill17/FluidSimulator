@@ -1,11 +1,12 @@
 #pragma once
 
+#include "utility/logger.h"
 #include "vulkan/vulkan.h"
 #include "render_systems/render_system.h"
 #include "renderer/renderer.h"
 #include "renderer/device.h"
-#include "renderer/pipeline_builder.h"
 #include "renderer/command.h"
+#include "renderer/pipeline.h"
 #include "physics/particle_system.h"
 
 #include <vector>

@@ -1,18 +1,22 @@
 #pragma once
 #include "NonCopyable.h"
 #include "vulkan/vulkan.h"
-#include "utility/logger.h"
 #include "vma/vk_mem_alloc.h"
-#include "device.h"
 #include "utility/allocator.h"
 
 
 class Buffer : public NonCopyable {
 public:
-	Buffer(Device& device, Allocator& allocator, size_t instanceSize,
+	Buffer(DeviceMemoryManager* deviceMemoryManager, size_t instanceSize,
 		uint32_t instanceCount, VkBufferUsageFlags usageFlags,
 		VmaMemoryUsage memoryUsage, size_t minOffsetAlignment = 1);
-	~Buffer();
+    ~Buffer();
+
+    Buffer(Buffer&& other) noexcept;
+    Buffer& operator=(Buffer&& other) noexcept;
+
+    // @brief Destroys the buffer object
+    void destroy();
 
 	// @brief Maps CPU-accessible pointer to the buffer on the GPU
 	void map();
@@ -40,8 +44,7 @@ public:
 	inline size_t alignmentSize() { return _alignmentSize; }
 
 private:
-	Device& _device;
-	Allocator& _allocator;
+	DeviceMemoryManager* _deviceMemoryManager;
 
 	VkBuffer _buffer; // Vulkan buffer object
 	VmaAllocation _allocation; // vma allocation object

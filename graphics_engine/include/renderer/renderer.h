@@ -1,13 +1,15 @@
 #pragma once
 #include "NonCopyable.h"
+#include "utility/logger.h"
 #include "renderer/command.h"
 #include "utility/allocator.h"
 #include "utility/debug_messenger.h"
-#include "pipeline_builder.h"
 #include "swapchain.h"
 #include "image.h"
 #include "descriptor.h"
+#include "pipeline.h"
 #include "render_systems/render_system.h"
+#include "utility/logger.h"
 #include <cstdint>
 
 class Swapchain;
@@ -46,13 +48,16 @@ public:
     // @brief Waits for the device to be idle
 	void waitForIdle();
 
+    // @brief Make sure all GPU processes are finished. This must be called before the program ends.
+    void shutdown();
+
 	inline Device& device() { return _device; }
 	inline Swapchain& swapchain() { return _swapchain; }
 	inline Instance& instance() { return _instance; }
 	inline PipelineBuilder& pipelineBuilder() { return _pipelineBuilder; }
 	inline DescriptorLayoutBuilder& descriptorLayoutBuilder() { return _descriptorLayoutBuilder; }
 	inline DescriptorWriter& descriptorWriter() { return _descriptorWriter; }
-	inline Allocator& allocator() { return _allocator; }
+	inline DeviceMemoryManager& deviceMemoryManager() { return _deviceMemoryManager; }
 
 private:
 	Window& _window; // Main window to render to. It is a reference because the renderer does not create it.
@@ -61,7 +66,7 @@ private:
 	Instance _instance; // @brief Vulkan instance object
     DebugMessenger _debugMessenger; // Vulkan debug messenger callback for validation layers
 	Device _device; // Vulkan device object containing physical and logical devices
-	Allocator _allocator; // VMA allocator for buffers and images
+	DeviceMemoryManager _deviceMemoryManager; // Wrapper over VMA that handles buffer allocation and freeing
 	Swapchain _swapchain; // The swapchain handles presents draw images to the window
 	PipelineBuilder _pipelineBuilder; // Pipeline builder handles graphics and compute pipeline creation since that is tied to the renderer
 

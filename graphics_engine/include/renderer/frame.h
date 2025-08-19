@@ -7,16 +7,18 @@
 
 class Command;
 
-class Frame {
+class Frame : public NonCopyable {
 public:
-	Frame(Device& device);
+	Frame(Device* device);
 
 	inline Semaphore& presentSemaphore() { return _presentSemaphore; }
 	inline Semaphore& renderSemaphore() { return _renderSemaphore; }
 	inline Fence& renderFence() { return _renderFence; }
 
+    Frame(Frame&& other) noexcept;
+    Frame& operator=(Frame&& other) noexcept;
+
 private:
-	Device& _device;
 	Semaphore _presentSemaphore;
 	Semaphore _renderSemaphore;
 	Fence _renderFence;

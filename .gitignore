@@ -7,3 +7,5 @@ renderdoc/
 .cache/
 imgui.ini
 compile_flags.txt
+docs/html
+docs/latex

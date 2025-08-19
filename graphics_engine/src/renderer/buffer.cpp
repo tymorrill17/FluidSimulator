@@ -1,17 +1,18 @@
 #include "renderer/buffer.h"
+#include "renderer/image.h"
+#include "utility/logger.h"
+#include "vulkan/vulkan_core.h"
 
-Buffer::Buffer(Device& device, Allocator& allocator, size_t instanceSize,
+Buffer::Buffer(DeviceMemoryManager* allocator, size_t instanceSize,
 	uint32_t instanceCount, VkBufferUsageFlags usageFlags,
 	VmaMemoryUsage memoryUsage, size_t minOffsetAlignment) :
-	_device(device),
-	_allocator(allocator),
+	_deviceMemoryManager(allocator),
 	_buffer(VK_NULL_HANDLE),
 	_mappedData(nullptr),
 	_bufferSize(instanceSize*instanceCount),
 	_instanceCount(instanceCount),
-	_instanceSize(instanceSize) {
-
-	_alignmentSize = findAlignmentSize(_instanceSize, minOffsetAlignment);
+	_instanceSize(instanceSize),
+    _alignmentSize(findAlignmentSize(_instanceSize, minOffsetAlignment)) {
 
 	VkBufferCreateInfo bufferCreateInfo{
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -25,25 +26,69 @@ Buffer::Buffer(Device& device, Allocator& allocator, size_t instanceSize,
 		.usage = memoryUsage
 	};
 
-	if (vmaCreateBuffer(_allocator.handle(), &bufferCreateInfo, &allocationCreateInfo, &_buffer, &_allocation, &_allocationInfo) != VK_SUCCESS) {
+	if (vmaCreateBuffer(_deviceMemoryManager->allocator(), &bufferCreateInfo, &allocationCreateInfo, &_buffer, &_allocation, &_allocationInfo) != VK_SUCCESS) {
         Logger::logError("Failed to create allocated buffer!");
 	}
 }
 
 Buffer::~Buffer() {
-	unmap();
-	vmaDestroyBuffer(_allocator.handle(), _buffer, _allocation);
+    destroy();
+}
+
+Buffer::Buffer(Buffer&& other) noexcept :
+    _deviceMemoryManager(std::move(other._deviceMemoryManager)),
+    _buffer(std::move(other._buffer)),
+    _allocation(std::move(other._allocation)),
+    _allocationInfo(std::move(other._allocationInfo)),
+    _mappedData(std::move(other._mappedData)),
+    _bufferSize(std::move(other._bufferSize)),
+    _instanceCount(std::move(other._instanceCount)),
+    _instanceSize(std::move(other._instanceSize)),
+    _alignmentSize(std::move(other._alignmentSize)) {
+
+    other._deviceMemoryManager = nullptr;
+    other._buffer = VK_NULL_HANDLE;
+    other._allocation = nullptr;
+    other._mappedData = nullptr;
+}
+
+Buffer& Buffer::operator=(Buffer&& other) noexcept {
+    if (this != &other) {
+        _deviceMemoryManager = std::move(other._deviceMemoryManager);
+        _buffer = std::move(other._buffer);
+        _allocation = std::move(other._allocation);
+        _allocationInfo = std::move(other._allocationInfo);
+        _mappedData = std::move(other._mappedData);
+        _bufferSize = std::move(other._bufferSize);
+        _instanceCount = std::move(other._instanceCount);
+        _instanceSize = std::move(other._instanceSize);
+        _alignmentSize = std::move(other._alignmentSize);
+
+        other._deviceMemoryManager = nullptr;
+        other._buffer = VK_NULL_HANDLE;
+        other._allocation = nullptr;
+        other._mappedData = nullptr;
+    }
+    return *this;
+}
+
+
+void Buffer::destroy() {
+    if (_mappedData)
+        unmap();
+
+    vmaDestroyBuffer(_deviceMemoryManager->allocator(), _buffer, _allocation);
 }
 
 void Buffer::map() {
-	if (vmaMapMemory(_allocator.handle(), _allocation, &_mappedData) != VK_SUCCESS) {
+	if (vmaMapMemory(_deviceMemoryManager->allocator(), _allocation, &_mappedData) != VK_SUCCESS) {
         Logger::logError("Failed to map memory to the buffer!");
 	}
 }
 
 void Buffer::unmap() {
 	if (_mappedData) {
-		vmaUnmapMemory(_allocator.handle(), _allocation);
+		vmaUnmapMemory(_deviceMemoryManager->allocator(), _allocation);
 		_mappedData = nullptr;
 	}
 }

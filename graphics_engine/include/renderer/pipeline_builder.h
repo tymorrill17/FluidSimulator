@@ -3,7 +3,6 @@
 #include "utility/logger.h"
 #include "NonCopyable.h"
 #include "device.h"
-#include "shader.h"
 #include "pipeline.h"
 #include <vector>
 #include <stdexcept>

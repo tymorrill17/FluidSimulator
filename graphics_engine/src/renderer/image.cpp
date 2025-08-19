@@ -1,9 +1,50 @@
 #include "renderer/image.h"
+#include "utility/allocator.h"
+#include "utility/logger.h"
+#include "vulkan/vulkan_core.h"
 
 // Image --------------------------------------------------------------------------------------------------
 
 Image::Image(VkImage image, VkImageView imageView, VkExtent3D extent, VkFormat format, VkImageLayout imageLayout) :
-	_image(image), _imageView(imageView), _extent(extent), _format(format), _imageLayout(imageLayout) {}
+	_image(image),
+    _imageView(imageView),
+    _imageLayout(imageLayout),
+    _extent(extent),
+    _format(format) {
+}
+
+Image::~Image() {}
+
+Image::Image(Image&& other) noexcept :
+    _image(std::move(other._image)),
+    _imageView(std::move(other._imageView)),
+    _imageLayout(std::move(other._imageLayout)),
+    _extent(std::move(other._extent)),
+    _format(std::move(other._format)) {
+
+    other._image = VK_NULL_HANDLE;
+    other._imageView = VK_NULL_HANDLE;
+    other._imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    other._extent = {0, 0};
+    other._format = VK_FORMAT_UNDEFINED;
+}
+
+Image& Image::operator=(Image&& other) noexcept {
+    if (this != &other) {
+        _image = std::move(other._image);
+        _imageView = std::move(other._imageView);
+        _imageLayout = std::move(other._imageLayout);
+        _extent = std::move(other._extent);
+        _format = std::move(other._format);
+        other._image = VK_NULL_HANDLE;
+        other._imageView = VK_NULL_HANDLE;
+        other._imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        other._extent = {0, 0};
+        other._format = VK_FORMAT_UNDEFINED;
+    }
+    return *this;
+}
+
 
 void Image::transitionImage(Command& cmd, VkImageLayout newLayout) {
 	VkImageAspectFlags aspectMask = (newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
@@ -40,18 +81,18 @@ void Image::transitionImage(Command& cmd, VkImageLayout newLayout) {
 	_imageLayout = newLayout;
 }
 
-void Image::copyImageOnGPU(Command& cmd, Image& src, Image& dst) {
+void Image::copyImageOnGPU(Command& cmd, Image* src, Image* dst) {
 	VkImageBlit2 blitRegion{
 		.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
 		.pNext = nullptr
 	};
 
-	blitRegion.srcOffsets[1].x = src.extent().width;
-	blitRegion.srcOffsets[1].y = src.extent().height;
+	blitRegion.srcOffsets[1].x = src->extent().width;
+	blitRegion.srcOffsets[1].y = src->extent().height;
 	blitRegion.srcOffsets[1].z = 1;
 
-	blitRegion.dstOffsets[1].x = dst.extent().width;
-	blitRegion.dstOffsets[1].y = dst.extent().height;
+	blitRegion.dstOffsets[1].x = dst->extent().width;
+	blitRegion.dstOffsets[1].y = dst->extent().height;
 	blitRegion.dstOffsets[1].z = 1;
 
 	blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -67,9 +108,9 @@ void Image::copyImageOnGPU(Command& cmd, Image& src, Image& dst) {
 	VkBlitImageInfo2 blitInfo{
 		.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
 		.pNext = nullptr,
-		.srcImage = src.image(),
+		.srcImage = src->image(),
 		.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		.dstImage = dst.image(),
+		.dstImage = dst->image(),
 		.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		.regionCount = 1,
 		.pRegions = &blitRegion,
@@ -113,9 +154,10 @@ void AllocatedImage::createAllocatedImage() {
 		.requiredFlags = static_cast<VkMemoryPropertyFlags>(_vkMemoryUsage)
 	};
 
-	if (vmaCreateImage(_allocator.handle(), &imageInfo, &allocInfo, &_image, &_allocation, nullptr) != VK_SUCCESS) {
+	if (vmaCreateImage(_deviceMemoryManager->allocator(), &imageInfo, &allocInfo, &_image, &_allocation, nullptr) != VK_SUCCESS) {
         Logger::logError("Failed to create and allocate image!");
 	}
+    vmaSetAllocationName(_deviceMemoryManager->allocator(), _allocation, "AllocatedImage");
 
 	VkImageSubresourceRange subresourceRange{
 		.aspectMask = _aspectFlags,
@@ -134,25 +176,58 @@ void AllocatedImage::createAllocatedImage() {
 		.subresourceRange = subresourceRange
 	};
 
-	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
+	if (vkCreateImageView(_device->handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
         Logger::logError("Failed to create allocated image view!");
 	}
 }
 
-AllocatedImage::AllocatedImage(Device& device, Allocator& allocator,
+AllocatedImage::AllocatedImage(Device* device, DeviceMemoryManager* deviceMemoryManager,
 	VkExtent3D extent, VkFormat format, VkImageUsageFlags usageFlags,
 	VmaMemoryUsage memoryUsage, VkMemoryAllocateFlags vkMemoryUsage,
 	VkImageAspectFlags aspectFlags) :
 	Image(VK_NULL_HANDLE, VK_NULL_HANDLE, extent, format, VK_IMAGE_LAYOUT_UNDEFINED),
-	_device(device), _allocator(allocator), _allocation(nullptr), _usageFlags(usageFlags),
+	_device(device), _deviceMemoryManager(deviceMemoryManager), _allocation(nullptr), _usageFlags(usageFlags),
 	_memoryUsage(memoryUsage), _vkMemoryUsage(vkMemoryUsage), _aspectFlags(aspectFlags) {
 
 	createAllocatedImage();
 }
 
+AllocatedImage::AllocatedImage(AllocatedImage&& other) noexcept :
+    Image(std::move(other)),
+    _device(std::move(other._device)),
+    _deviceMemoryManager(std::move(other._deviceMemoryManager)),
+    _allocation(std::move(other._allocation)),
+    _usageFlags(std::move(other._usageFlags)),
+    _memoryUsage(std::move(other._memoryUsage)),
+    _vkMemoryUsage(std::move(other._vkMemoryUsage)),
+    _aspectFlags(std::move(other._aspectFlags)) {
+
+    other._device = nullptr;
+    other._deviceMemoryManager = nullptr;
+    other._allocation = nullptr;
+}
+
+AllocatedImage& AllocatedImage::operator=(AllocatedImage&& other) noexcept {
+    if (this != &other) {
+        Image::operator=(std::move(other));
+        _device = std::move(other._device);
+        _deviceMemoryManager = std::move(other._deviceMemoryManager);
+        _allocation = std::move(other._allocation);
+        _usageFlags = std::move(other._usageFlags);
+        _memoryUsage = std::move(other._memoryUsage);
+        _vkMemoryUsage = std::move(other._vkMemoryUsage);
+        _aspectFlags = std::move(other._aspectFlags);
+
+        other._device = nullptr;
+        other._deviceMemoryManager = nullptr;
+        other._allocation = nullptr;
+    }
+    return *this;
+}
+
 void AllocatedImage::cleanup() {
-	vkDestroyImageView(_device.handle(), _imageView, nullptr);
-	vmaDestroyImage(_allocator.handle(), _image, _allocation);
+	vkDestroyImageView(_device->handle(), _imageView, nullptr);
+	vmaDestroyImage(_deviceMemoryManager->allocator(), _image, _allocation);
 }
 
 void AllocatedImage::recreate(VkExtent3D extent) {
@@ -165,7 +240,7 @@ void AllocatedImage::recreate(VkExtent3D extent) {
 
 // SwapchainImage --------------------------------------------------------------------------------------------------
 
-SwapchainImage::SwapchainImage(Device& device, VkImage image, VkExtent3D extent,
+SwapchainImage::SwapchainImage(Device* device, VkImage image, VkExtent3D extent,
 	VkFormat format) :
 	Image(image, VK_NULL_HANDLE, extent, format, VK_IMAGE_LAYOUT_UNDEFINED), _device(device) {
 
@@ -187,13 +262,29 @@ SwapchainImage::SwapchainImage(Device& device, VkImage image, VkExtent3D extent,
 		.subresourceRange = subresourceRange
 	};
 
-	if (vkCreateImageView(_device.handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
+	if (vkCreateImageView(_device->handle(), &imageViewInfo, nullptr, &_imageView) != VK_SUCCESS) {
         Logger::logError("Failed to create swapchain image view!");
 	}
 }
 
-void SwapchainImage::cleanup() {
-	vkDestroyImageView(_device.handle(), _imageView, nullptr);
+SwapchainImage::SwapchainImage(SwapchainImage&& other) noexcept :
+    Image(std::move(other)),
+    _device(std::move(other._device)) {
+    other._device = nullptr;
+}
+
+SwapchainImage& SwapchainImage::operator=(SwapchainImage&& other) noexcept {
+    if (this != &other) {
+        Image::operator=(std::move(other));
+        _device = std::move(other._device);
+        other._device = nullptr;
+    }
+    return *this;
+}
+
+
+SwapchainImage::~SwapchainImage() {
+	vkDestroyImageView(_device->handle(), _imageView, nullptr);
 }
 
 

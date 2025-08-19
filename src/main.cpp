@@ -1,5 +1,5 @@
+#include <cstdlib>
 #include <iostream>
-#include <sstream>
 #include "utility/window.h"
 #include "utility/camera.h"
 #include "utility/timer.h"
@@ -29,10 +29,11 @@ struct GlobalUBO {
 };
 
 int main(int argc, char* argv[]) {
+    try {
 	// Initialize the renderer, window and input manager
-	//Application* app = new Application();
-	Application* app = new Application(APPLICATION_WIDTH, APPLICATION_HEIGHT, "2D Fluid Simulator");
-
+    Window window({ APPLICATION_WIDTH, APPLICATION_HEIGHT }, "Fluid Simulator");
+    Renderer renderer(window);
+    InputManager inputManager(window);
 
     static Timer& timer = Timer::getTimer();
     static Gui& gui = Gui::getGui();
@@ -45,7 +46,7 @@ int main(int argc, char* argv[]) {
         //{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 10},
         //{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}
     };
-    DescriptorPool globalDescriptorPool(app->renderer().device(), 10, renderDescriptorSetSizes);
+    DescriptorPool globalDescriptorPool(renderer.device(), 10, renderDescriptorSetSizes);
 
     float particleColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -74,52 +75,52 @@ int main(int argc, char* argv[]) {
     Hand mouseInteraction(handRadius, interactionStrength, coordinateScale);
 
     // The constructor of the particle system initializes the positions of the particles to a grid
-    ParticleSystem2D fluidParticles(particleInfo, physicsInfo, box, app->inputManager(), &mouseInteraction);
+    ParticleSystem2D fluidParticles(particleInfo, physicsInfo, box, inputManager, &mouseInteraction);
 
     // We will use a uniform buffer for the global particle info
-    Buffer globalParticleBuffer(app->renderer().device(), app->renderer().allocator(), sizeof(GlobalParticleInfo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, app->renderer().device().physicalDeviceProperies().limits.minUniformBufferOffsetAlignment);
+    Buffer globalParticleBuffer(&renderer.deviceMemoryManager(), sizeof(GlobalParticleInfo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, renderer.device().physicalDeviceProperies().limits.minUniformBufferOffsetAlignment);
     globalParticleBuffer.map();
 
     // For the actual particle info, we want to use a storage buffer
-    Buffer particleBuffer(app->renderer().device(), app->renderer().allocator(), sizeof(Particle2D) * MAX_PARTICLES, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, app->renderer().device().physicalDeviceProperies().limits.minStorageBufferOffsetAlignment);
+    Buffer particleBuffer(&renderer.deviceMemoryManager(), sizeof(Particle2D) * MAX_PARTICLES, 1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, renderer.device().physicalDeviceProperies().limits.minStorageBufferOffsetAlignment);
     particleBuffer.map();
 
-    Buffer globalBuffer(app->renderer().device(), app->renderer().allocator(), sizeof(GlobalUBO), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, app->renderer().device().physicalDeviceProperies().limits.minUniformBufferOffsetAlignment);
+    Buffer globalBuffer(&renderer.deviceMemoryManager(), sizeof(GlobalUBO), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, renderer.device().physicalDeviceProperies().limits.minUniformBufferOffsetAlignment);
     globalBuffer.map();
 
-    VkDescriptorSetLayout particleLayouts = app->renderer().descriptorLayoutBuilder()
+    VkDescriptorSetLayout particleLayouts = renderer.descriptorLayoutBuilder()
         .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
         .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
         .build();
     VkDescriptorSet particleDescriptor = globalDescriptorPool.allocateDescriptorSet(particleLayouts);
-    app->renderer().descriptorWriter()
+    renderer.descriptorWriter()
         .addBuffer(0, globalParticleBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
         .addBuffer(1, particleBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
         .writeDescriptorSet(particleDescriptor)
         .clear();
-    app->renderer().descriptorLayoutBuilder().clear();
+    renderer.descriptorLayoutBuilder().clear();
 
-    VkDescriptorSetLayout globalLayout = app->renderer().descriptorLayoutBuilder()
+    VkDescriptorSetLayout globalLayout = renderer.descriptorLayoutBuilder()
         .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
         .build();
     VkDescriptorSet globalDescriptor = globalDescriptorPool.allocateDescriptorSet(globalLayout);
-    app->renderer().descriptorWriter()
+    renderer.descriptorWriter()
         .addBuffer(0, globalBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
         .writeDescriptorSet(globalDescriptor)
         .clear();
-    app->renderer().descriptorLayoutBuilder().clear();
+    renderer.descriptorLayoutBuilder().clear();
 
     // Create the render systems and add them to the renderer
-    ParticleRenderSystem particleRenderSystem(app->renderer(), std::vector<VkDescriptorSetLayout>{particleLayouts, globalLayout}, std::vector<VkDescriptorSet>{particleDescriptor, globalDescriptor}, fluidParticles);
-    app->renderer().addRenderSystem(&particleRenderSystem);
+    ParticleRenderSystem particleRenderSystem(renderer, std::vector<VkDescriptorSetLayout>{particleLayouts, globalLayout}, std::vector<VkDescriptorSet>{particleDescriptor, globalDescriptor}, fluidParticles);
+    renderer.addRenderSystem(&particleRenderSystem);
 
     // Set up the camera
     Camera camera{};
 
     GlobalUBO globalBufferObject{};
 
-    GuiRenderSystem guiRenderSystem(app->renderer(), app->window());
-    app->renderer().addRenderSystem(&guiRenderSystem);
+    GuiRenderSystem guiRenderSystem(renderer, window);
+    renderer.addRenderSystem(&guiRenderSystem);
 
     std::cout << "Starting the main loop!" << std::endl;
 
@@ -128,9 +129,9 @@ int main(int argc, char* argv[]) {
     glm::vec2 mousePosition;
 
     // Main application loop
-    while (!app->window().shouldClose()) {
-        app->inputManager().processInputs(); // Poll the user inputs
-        if (app->window().pauseRendering()) {
+    while (!window.shouldClose()) {
+        inputManager.processInputs(); // Poll the user inputs
+        if (window.pauseRendering()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             timer.update(); // Updating the timer here too so there are no large jumps in timer updates
             continue;
@@ -181,7 +182,7 @@ int main(int argc, char* argv[]) {
                 });
 
         // Set the camera projection with the current aspect ratio
-        float aspect = app->window().aspectRatio();
+        float aspect = window.aspectRatio();
         box.left = -aspect * coordinateScale; box.right = aspect * coordinateScale;
         box.bottom = -1.0f * coordinateScale; box.top = 1.0f * coordinateScale;
         //camera.setOrthographicProjection(-aspect, aspect, -1.0f, 1.0f, 0.1f, 10.0f);
@@ -193,7 +194,7 @@ int main(int argc, char* argv[]) {
         globalBufferObject.projection = camera.projectionMatrix();
         globalBufferObject.view = camera.viewMatrix();
 
-        mousePosition = app->inputManager().mousePosition();
+        mousePosition = inputManager.mousePosition();
         mouseInteraction.setPosition(mousePosition);
         mouseInteraction.radius = handRadius;
         mouseInteraction.strengthFactor = interactionStrength;
@@ -211,14 +212,18 @@ int main(int argc, char* argv[]) {
         globalParticleBuffer.writeData(&particleInfo);
         particleBuffer.writeData(fluidParticles.particles());
 
-        app->renderer().renderAllSystems();
+        renderer.renderAllSystems();
 
-        app->renderer().resizeCallback(); // Check for window resize and call the window resize callback function
+        renderer.resizeCallback(); // Check for window resize and call the window resize callback function
 
         guiRenderSystem.endFrame();
     }
+    renderer.shutdown();
 
-    app->renderer().waitForIdle();
+    } catch (const std::exception& e) {
+        std::cerr << "Exception caught: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 
     std::cout << "Shutting Down... Bye Bye!" << std::endl;
 

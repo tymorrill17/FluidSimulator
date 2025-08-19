@@ -1,5 +1,6 @@
 #include "render_systems/gui_render_system.h"
 #include "render_systems/render_system.h"
+#include "utility/logger.h"
 
 std::vector<PoolSizeRatio> poolSizes = { { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
 	{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },

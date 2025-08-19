@@ -1,8 +1,9 @@
+#include "utility/logger.h"
 #define VMA_IMPLEMENTATION
 #include "vma/vk_mem_alloc.h"
 #include "utility/allocator.h"
 
-Allocator::Allocator(Device& device, Instance& instance) : _device(device), _instance(instance) {
+DeviceMemoryManager::DeviceMemoryManager(Device& device, Instance& instance) : _device(device), _instance(instance) {
 	VmaAllocatorCreateInfo allocatorCreateInfo{
 		.physicalDevice = _device.physicalDevice(),
 		.device = _device.handle(),
@@ -13,6 +14,6 @@ Allocator::Allocator(Device& device, Instance& instance) : _device(device), _ins
 	}
 }
 
-Allocator::~Allocator() {
+DeviceMemoryManager::~DeviceMemoryManager() {
 	vmaDestroyAllocator(_vmaAllocator);
 }

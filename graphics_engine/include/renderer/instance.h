@@ -2,9 +2,9 @@
 #include "vulkan/vulkan.h"
 #include "NonCopyable.h"
 #include "utility/logger.h"
-#include "utility/window.h"
-#include "utility/logger.h"
 #include "utility/debug_messenger.h"
+#include "utility/window.h"
+#include "vulkan/vulkan_core.h"
 #include <vector>
 
 class Instance : public NonCopyable {

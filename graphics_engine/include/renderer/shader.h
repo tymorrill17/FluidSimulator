@@ -1,4 +1,5 @@
 #pragma once
+#include "NonCopyable.h"
 #include "vulkan/vulkan.h"
 #include "device.h"
 #include <string>
@@ -6,9 +7,9 @@
 #include <sstream>
 #include <iostream>
 
-class Shader {
+class Shader : public NonCopyable {
 public:
-	Shader(Device& device, const std::string& filepath, VkShaderStageFlagBits stageFlag);
+	Shader(Device* device, const std::string& filepath, VkShaderStageFlagBits stageFlag);
 	~Shader();
 
 	inline VkShaderModule module() const { return _shaderModule; }
@@ -20,7 +21,7 @@ public:
 	static VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shader);
 
 private:
-	Device& _device;
+	Device* _device;
 	VkShaderModule _shaderModule;
 	VkShaderStageFlagBits _shaderStageFlag;
 };

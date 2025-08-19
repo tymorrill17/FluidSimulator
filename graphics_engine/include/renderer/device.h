@@ -1,10 +1,10 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include "utility/logger.h"
 #include "device.h"
 #include "instance.h"
 #include "utility/window.h"
 #include "queue_family.h"
+#include "vulkan/vulkan_core.h"
 #include <vector>
 #include <string>
 #include <set>
@@ -31,6 +31,8 @@ private:
 	QueueFamilyIndices _indices;
 	VkQueue _graphQueue; // Graphics queue
 	VkQueue _presQueue; // Present queue
+
+    VkSurfaceKHR _windowSurface; // Keep track of window surface for deletion
 
 	// @brief Verify that the selected physical device supports the requested extensions
 	// @param physicalDevice - The selected physical device to check

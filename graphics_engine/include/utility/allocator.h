@@ -5,12 +5,12 @@
 #include "renderer/instance.h"
 #include "NonCopyable.h"
 
-class Allocator : public NonCopyable {
+class DeviceMemoryManager : public NonCopyable {
 public:
-	Allocator(Device& device, Instance& instance);
-	~Allocator();
+	DeviceMemoryManager(Device& device, Instance& instance);
+	~DeviceMemoryManager();
 
-	inline VmaAllocator handle() const { return _vmaAllocator; }
+	inline VmaAllocator allocator() const { return _vmaAllocator; }
 
 private:
 	// @brief The actual VMA allocator instance

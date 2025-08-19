@@ -1,5 +1,6 @@
 #pragma once
 #include "vulkan/vulkan.h"
+#include "NonCopyable.h"
 #include "utility/logger.h"
 #include "renderer/sync.h"
 #include "NonCopyable.h"
@@ -10,25 +11,30 @@
 class Device;
 class Frame;
 
-class CommandPool {
+class CommandPool : public NonCopyable {
 public:
-    CommandPool(Device& device, VkCommandPoolCreateFlags flags);
+    CommandPool(Device* device, VkCommandPoolCreateFlags flags);
     ~CommandPool();
 
+    CommandPool(CommandPool&&) noexcept;
+    CommandPool& operator=(CommandPool&&) noexcept;
+
 	// @brief Resets the command pool. Command buffers are not destroyed, but they are all reset to an initial state
-    void reset(VkCommandPoolResetFlags flags);
+    void reset(VkCommandPoolResetFlags flags = 0);
 
     inline VkCommandPool handle() { return _commandPool; }
 
 private:
-    Device& _device;
+    Device* _device;
 	VkCommandPool _commandPool;
 };
 
-class Command {
+class Command : public NonCopyable {
 public:
-	Command(Device& device, VkCommandPoolCreateFlags flags); // Create a command pool alongside command buffer creation
-	Command(Device& device, CommandPool* commandPool); // Or use an existing command pool
+	Command(Device* device, CommandPool* commandPool); // Or use an existing command pool
+
+    Command(Command&& other) noexcept;
+    Command& operator=(Command&& other) noexcept;
 
     // @brief Resets the command buffer
     void reset(VkCommandBufferResetFlags flags = 0) const;
@@ -44,15 +50,15 @@ public:
 	// @param frame - The current frame waiting for rendering. This object contains the sync objects needed to submit properly
 	void submitToQueue(VkQueue queue, Frame& frame);
 
-    inline std::shared_ptr<CommandPool> pool() { return _commandPool; }
+    inline CommandPool* pool() { return _commandPool; }
     inline VkCommandBuffer buffer() { return _commandBuffer; }
 
 	// @brief Populates a command buffer begin info struct
 	static VkCommandBufferBeginInfo commandBufferBeginInfo(VkCommandBufferUsageFlags flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 protected:
-    Device& _device;
-    std::shared_ptr<CommandPool> _commandPool;
+    Device* _device;
+    CommandPool* _commandPool;
 	VkCommandBuffer _commandBuffer;
 	bool _inProgress;
 
@@ -62,8 +68,7 @@ protected:
 
 class ImmediateCommand : public Command {
 public:
-	ImmediateCommand(Device& device, VkCommandPoolCreateFlags flags);
-	ImmediateCommand(Device& device, CommandPool* commandPool); // Or use an existing command pool
+	ImmediateCommand(Device* device, CommandPool* commandPool); // Or use an existing command pool
 
 	inline Fence& fence() { return _submitFence; }
 

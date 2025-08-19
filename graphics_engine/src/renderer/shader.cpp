@@ -1,7 +1,7 @@
 #include "renderer/shader.h"
 #include "utility/logger.h"
 
-Shader::Shader(Device& device, const std::string& filepath, VkShaderStageFlagBits stageFlag)
+Shader::Shader(Device* device, const std::string& filepath, VkShaderStageFlagBits stageFlag)
 	: _device(device),
 	_shaderStageFlag(stageFlag) {
 
@@ -30,7 +30,7 @@ Shader::Shader(Device& device, const std::string& filepath, VkShaderStageFlagBit
 	.pCode = buffer.data()
 	};
 
-	if (vkCreateShaderModule(device.handle(), &createinfo, nullptr, &_shaderModule) != VK_SUCCESS) {
+	if (vkCreateShaderModule(device->handle(), &createinfo, nullptr, &_shaderModule) != VK_SUCCESS) {
 		std::stringstream line;
 		line << "Error: vkCreateShaderModule() failed while creating " << filepath << std::endl;
         Logger::logError(line.str());
@@ -39,7 +39,7 @@ Shader::Shader(Device& device, const std::string& filepath, VkShaderStageFlagBit
 }
 
 Shader::~Shader() {
-	vkDestroyShaderModule(_device.handle(), _shaderModule, nullptr);
+	vkDestroyShaderModule(_device->handle(), _shaderModule, nullptr);
 }
 
 VkPipelineShaderStageCreateInfo Shader::pipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shader) {

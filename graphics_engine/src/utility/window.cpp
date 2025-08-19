@@ -1,4 +1,5 @@
 #include "utility/window.h"
+#include "SDL2/SDL_vulkan.h"
 #include "utility/logger.h"
 
 Window::Window(glm::ivec2 dimensions, const std::string& name) :
@@ -37,9 +38,6 @@ Window::Window(glm::ivec2 dimensions, const std::string& name) :
 }
 
 Window::~Window() {
-	if (_surface) {
-		vkDestroySurfaceKHR(_instance, _surface, nullptr);
-	}
 	SDL_DestroyWindow(_window);
 }
 
@@ -60,7 +58,7 @@ void Window::updateSize() {
     _aspectRatio = float(_windowExtent.width) / float(_windowExtent.height);
 }
 
-void Window::createSurface(VkInstance instance) {
+VkSurfaceKHR Window::createSurface(VkInstance instance) {
 
 	_instance = instance;
 
@@ -69,4 +67,6 @@ void Window::createSurface(VkInstance instance) {
 	}
 
 	std::cout << "Created SDL window surface for Vulkan" << std::endl;
+
+    return _surface;
 }

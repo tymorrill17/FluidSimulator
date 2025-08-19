@@ -1,26 +1,30 @@
 #include "renderer/renderer.h"
+#include "renderer/frame.h"
+#include "vulkan/vulkan_core.h"
 #include <cstdint>
 
 Renderer::Renderer(Window& window) :
-	_window(window),
 	_instance("EngineTest", "VulkanEngineV2", true),
+    _window(window),
 	_debugMessenger(_instance),
 	_device(_instance, _window, Instance::requestedDeviceExtensions),
-	_allocator(_device, _instance),
+	_deviceMemoryManager(_device, _instance),
 	_swapchain(_device, _window),
 	_pipelineBuilder(_device),
-	_frameNumber(0),
-	_drawImage(_device, _allocator, VkExtent3D{ _window.extent().width, _window.extent().height, 1 }, _swapchain.imageFormat(),
+    // _frames(_swapchain.framesInFlight(), Frame(_device)),
+	_drawImage(&_device, &_deviceMemoryManager, VkExtent3D{ _window.extent().width, _window.extent().height, 1 }, _swapchain.imageFormat(),
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		VMA_MEMORY_USAGE_GPU_ONLY, VkMemoryAllocateFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), VK_IMAGE_ASPECT_COLOR_BIT),
-    _commandPool(_device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
+    _commandPool(&_device, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
 	_descriptorLayoutBuilder(_device),
-	_descriptorWriter(_device) {
+	_descriptorWriter(_device),
+    _frameNumber(0) {
 
 	_frames.reserve(_swapchain.framesInFlight());
+    _perFrameCmd.reserve(_swapchain.framesInFlight());
 	for (int i = 0; i < _frames.capacity(); i++) {
-		_frames.emplace_back(_device);
-        _perFrameCmd.emplace_back(_device, &_commandPool);
+		_frames.emplace_back(&_device);
+        _perFrameCmd.emplace_back(&_device, &_commandPool);
 	}
 
     std::cout << "Engine Initiated!" << std::endl;
@@ -68,12 +72,12 @@ void Renderer::renderAllSystems() {
 	_swapchain.acquireNextImage(&getCurrentFrame().presentSemaphore(), nullptr);
 
 	// Get the current frame's command buffer
-	Command& cmd = _perFrameCmd[getFrameIndex()];
-	cmd.reset(); // Reset before adding more commands to be safe
-	cmd.begin(); // Begin the command buffer
+	Command* cmd = &_perFrameCmd[getFrameIndex()];
+	cmd->reset(); // Reset before adding more commands to be safe
+	cmd->begin(); // Begin the command buffer
 
 	// Transition the draw image to a writable format
-	_drawImage.transitionImage(cmd, VK_IMAGE_LAYOUT_GENERAL);
+	_drawImage.transitionImage(*cmd, VK_IMAGE_LAYOUT_GENERAL);
 
 	// Now the rendering info struct needs to be filled with the leftover info that the renderpass usually handles
 	VkClearValue clearColorValue{ .color{ 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -81,7 +85,7 @@ void Renderer::renderAllSystems() {
 	VkRenderingInfoKHR renderingInfo = renderingInfoKHR(_window.extent(), 1, &colorAttachmentInfo, nullptr);
 
 	// Transition draw image to a color attachment
-	_drawImage.transitionImage(cmd, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	_drawImage.transitionImage(*cmd, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 	// Set dynamic viewport and scissor
 	VkViewport viewport{
@@ -98,34 +102,34 @@ void Renderer::renderAllSystems() {
 		.extent = _window.extent()
 	};
 
-	vkCmdBeginRendering(cmd.buffer(), &renderingInfo);
+	vkCmdBeginRendering(cmd->buffer(), &renderingInfo);
 
 	// First, set the dynamic states: viewport and scissor
-	vkCmdSetViewport(cmd.buffer(), 0, 1, &viewport);
-	vkCmdSetScissor(cmd.buffer(), 0, 1, &scissor);
+	vkCmdSetViewport(cmd->buffer(), 0, 1, &viewport);
+	vkCmdSetScissor(cmd->buffer(), 0, 1, &scissor);
 
 	// We want to do imgui rendering here I think. It's either first or last. Maybe last since it's an overlay
 
 	// Call render() for each RenderSystem. Note that the order in which these systems are called matters.
 	for (auto* renderSystem : _renderSystems) {
-		renderSystem->render(cmd);
+		renderSystem->render(*cmd);
 	}
 
-	vkCmdEndRendering(cmd.buffer());
+	vkCmdEndRendering(cmd->buffer());
 
 	// Transition images for copying and then presenting
 	// Draw image is going to be copied to the swapchain image, so transition it to a transfer source layout
-	_drawImage.transitionImage(cmd, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+	_drawImage.transitionImage(*cmd, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 	// Swapchain image needs to be transitioned to a transfer destination layout
-	_swapchain.image(_swapchain.imageIndex()).transitionImage(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	_swapchain.image(_swapchain.imageIndex()).transitionImage(*cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	Image::copyImageOnGPU(cmd, _drawImage, _swapchain.image(_swapchain.imageIndex()));
+	Image::copyImageOnGPU(*cmd, &_drawImage, &_swapchain.image(_swapchain.imageIndex()));
 
 	// Transition swapchain image to a presentation-ready layout
-	_swapchain.image(_swapchain.imageIndex()).transitionImage(cmd, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	_swapchain.image(_swapchain.imageIndex()).transitionImage(*cmd, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-	cmd.end();
-	cmd.submitToQueue(_device.graphicsQueue(), getCurrentFrame()); // Submit the command buffer
+	cmd->end();
+	cmd->submitToQueue(_device.graphicsQueue(), getCurrentFrame()); // Submit the command buffer
 	_swapchain.presentToScreen(_device.presentQueue(), getCurrentFrame(), _swapchain.imageIndex()); // Present to screen
 
 	_frameNumber++;
@@ -142,3 +146,14 @@ void Renderer::resizeCallback() {
 void Renderer::waitForIdle() {
 	vkDeviceWaitIdle(_device.handle());
 }
+
+void Renderer::shutdown() {
+    waitForIdle();
+//    _perFrameCmd.clear();
+    //_commandPool.reset();
+}
+
+
+
+
+

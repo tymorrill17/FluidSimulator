@@ -4,45 +4,50 @@
 
 // CommandPool --------------------------------------------------------------------------------------------------
 
-CommandPool::CommandPool(Device& device, VkCommandPoolCreateFlags flags) :
+CommandPool::CommandPool(Device* device, VkCommandPoolCreateFlags flags) :
     _device(device),
     _commandPool(VK_NULL_HANDLE) {
 
 	VkCommandPoolCreateInfo commandPoolCreateInfo{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
 		.flags = flags,
-		.queueFamilyIndex = _device.queueFamilyIndices().graphicsFamily.value()
+		.queueFamilyIndex = _device->queueFamilyIndices().graphicsFamily.value()
 	};
 
-    if (vkCreateCommandPool(_device.handle(), &commandPoolCreateInfo, nullptr, &_commandPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(_device->handle(), &commandPoolCreateInfo, nullptr, &_commandPool) != VK_SUCCESS) {
         Logger::logError("Failed to create command pool!");
 	}
 }
 
 CommandPool::~CommandPool() {
-	vkDestroyCommandPool(_device.handle(), _commandPool, nullptr);
+	vkDestroyCommandPool(_device->handle(), _commandPool, nullptr);
+}
+
+CommandPool::CommandPool(CommandPool&& other) noexcept :
+    _device(other._device),
+    _commandPool(std::move(other._commandPool)) {
+
+    other._device = nullptr;
+    other._commandPool = VK_NULL_HANDLE;
+}
+
+CommandPool& CommandPool::operator=(CommandPool&& other) noexcept {
+    if (this != &other) {
+        _device = std::move(other._device);
+        _commandPool = std::move(other._commandPool);
+        other._device = nullptr;
+        other._commandPool = VK_NULL_HANDLE;
+    }
+    return *this;
 }
 
 void CommandPool::reset(VkCommandPoolResetFlags flags) {
-    vkResetCommandPool(_device.handle(), _commandPool, flags);
+    vkResetCommandPool(_device->handle(), _commandPool, flags);
 }
 
 // Command --------------------------------------------------------------------------------------------------
 
-Command::Command(Device& device, VkCommandPoolCreateFlags flags) :
-	_device(device),
-	_commandPool(nullptr),
-	_commandBuffer(VK_NULL_HANDLE),
-	_inProgress(false) {
-
-    // Since no command pool was passed in, we need to create one
-    _commandPool = std::make_shared<CommandPool>(_device, flags);
-
-	// Now allocate the command buffer
-	allocateCommandBuffer();
-}
-
-Command::Command(Device& device, CommandPool* commandPool) :
+Command::Command(Device* device, CommandPool* commandPool) :
 	_device(device),
 	_commandPool(commandPool),
 	_commandBuffer(VK_NULL_HANDLE),
@@ -50,6 +55,29 @@ Command::Command(Device& device, CommandPool* commandPool) :
 
 	// Now allocate the command buffer
 	allocateCommandBuffer();
+}
+
+Command::Command(Command&& other) noexcept :
+    _device(other._device),
+    _commandPool(std::move(other._commandPool)),
+    _commandBuffer(std::move(other._commandBuffer)),
+    _inProgress(std::move(other._inProgress)) {
+
+    other._commandPool = nullptr;
+    other._commandBuffer = VK_NULL_HANDLE;
+}
+
+Command& Command::operator=(Command&& other) noexcept {
+    if (this != &other) {
+        _device = std::move(other._device);
+        _commandPool = std::move(other._commandPool);
+        _commandBuffer = std::move(other._commandBuffer);
+        _inProgress = std::move(other._inProgress);
+        other._device = nullptr;
+        other._commandPool = nullptr;
+        other._commandBuffer = VK_NULL_HANDLE;
+    }
+    return *this;
 }
 
 void Command::allocateCommandBuffer(VkCommandBufferLevel level) {
@@ -60,7 +88,7 @@ void Command::allocateCommandBuffer(VkCommandBufferLevel level) {
 		.level = level,
 		.commandBufferCount = 1,
 	};
-	if (vkAllocateCommandBuffers(_device.handle(), &allocateInfo, &_commandBuffer) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(_device->handle(), &allocateInfo, &_commandBuffer) != VK_SUCCESS) {
         Logger::logError("Failed to allocate command buffer!");
 	}
 }
@@ -146,25 +174,21 @@ void Command::submitToQueue(VkQueue queue, Frame& frame) {
 
 // ImmediateCommand --------------------------------------------------------------------------------------------------
 
-ImmediateCommand::ImmediateCommand(Device& device, VkCommandPoolCreateFlags flags) :
-	Command(device, flags),
-	_submitFence(device, VK_FENCE_CREATE_SIGNALED_BIT) {}
-
-ImmediateCommand::ImmediateCommand(Device& device, CommandPool* commandPool) :
+ImmediateCommand::ImmediateCommand(Device* device, CommandPool* commandPool) :
 	Command(device, commandPool),
 	_submitFence(device, VK_FENCE_CREATE_SIGNALED_BIT) {}
 
 void ImmediateCommand::immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function) {
 	VkFence fence = _submitFence.handle();
-	vkResetFences(_device.handle(), 1, &fence);
+	vkResetFences(_device->handle(), 1, &fence);
 	reset(); // Reset the command buffer
 
 	begin();
 	function(_commandBuffer);
 	end();
 
-	submitToQueue(_device.graphicsQueue());
-	vkWaitForFences(_device.handle(), 1, &fence, true, 9999999999);
+	submitToQueue(_device->graphicsQueue());
+	vkWaitForFences(_device->handle(), 1, &fence, true, 9999999999);
 }
 
 void ImmediateCommand::submitToQueue(VkQueue queue) {

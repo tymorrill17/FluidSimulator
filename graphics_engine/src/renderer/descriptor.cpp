@@ -1,4 +1,6 @@
 #include "renderer/descriptor.h"
+#include "utility/logger.h"
+#include "vulkan/vulkan_core.h"
 
 // ---------------------------------------------- DESCRIPTOR POOL -----------------------------------------------------------------
 
@@ -23,6 +25,7 @@ DescriptorPool::DescriptorPool(Device& device, uint32_t maxSets, std::span<PoolS
 }
 
 DescriptorPool::~DescriptorPool() {
+    clearDescriptorSets();
 	vkDestroyDescriptorPool(_device.handle(), _descriptorPool, nullptr);
 }
 
@@ -77,7 +80,14 @@ VkDescriptorSetLayout DescriptorLayoutBuilder::build() {
 	if (vkCreateDescriptorSetLayout(_device.handle(), &descriptorSetLayoutCreateInfo, nullptr, &layout) != VK_SUCCESS) {
         Logger::logError("Failed to build descriptor set layout!");
 	}
+    _layoutDeletionQueue.push_back(layout);
 	return layout;
+}
+
+void DescriptorLayoutBuilder::flushLayouts() {
+    for (auto& layout : _layoutDeletionQueue) {
+        vkDestroyDescriptorSetLayout(_device.handle(), layout, nullptr);
+    }
 }
 
 // ---------------------------------------------- DESCRIPTOR WRITER -----------------------------------------------------------------

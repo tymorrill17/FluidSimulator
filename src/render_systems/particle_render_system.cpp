@@ -8,8 +8,8 @@ void ParticleRenderSystem::buildPipeline() {
 	std::string baseDir = static_cast<std::string>(BASE_DIR);
 	std::string folderDir = baseDir + "\\shaders\\";
 
-	Shader defaultVertShader(_renderer.device(), folderDir + "circle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-	Shader defaultFragShader(_renderer.device(), folderDir + "circle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	Shader defaultVertShader(&_renderer.device(), folderDir + "circle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	Shader defaultFragShader(&_renderer.device(), folderDir + "circle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	Pipeline pipeline = _renderer.pipelineBuilder().setVertexInputState(PipelineBuilder::vertexInputStateCreateInfo())
 		.setShader(defaultVertShader)

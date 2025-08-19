@@ -1,4 +1,5 @@
 #include "renderer/swapchain.h"
+#include "renderer/image.h"
 #include <stdexcept>
 
 Swapchain::Swapchain(Device& device, Window& window) :
@@ -85,8 +86,8 @@ void Swapchain::createSwapchain() {
 	// Now fill the _images vector, which creates the image views through the Image constructor
 	_images.reserve(_framesInFlight);
 	VkExtent3D swapchainImageExtent{ _extent.width, _extent.height, 1 };
-	for (VkImage image : images) {
-		_images.emplace_back(_device, image, swapchainImageExtent, _imageFormat);
+	for (auto image : images) {
+		_images.emplace_back(&_device, image, swapchainImageExtent, _imageFormat);
 	}
 }
 

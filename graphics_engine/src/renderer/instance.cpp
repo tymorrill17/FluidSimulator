@@ -9,8 +9,8 @@ std::vector<const char*> Instance::requestedDeviceExtensions = {
 };
 
 Instance::Instance(const char* appName, const char* engineName, bool enableValidationLayers) :
-	enableValidationLayers(enableValidationLayers),
-	instance(VK_NULL_HANDLE) {
+	instance(VK_NULL_HANDLE),
+    enableValidationLayers(enableValidationLayers) {
 
 	if (enableValidationLayers && !checkValidationLayerSupport()) {
         Logger::logError("Validation layers requested, but are not supported!");

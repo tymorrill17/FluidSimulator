@@ -1,9 +1,11 @@
 #pragma once
+#include "NonCopyable.h"
 #include "vulkan/vulkan.h"
 #include "utility/logger.h"
 #include "device.h"
 #include "buffer.h"
 #include "image.h"
+#include "vulkan/vulkan_core.h"
 #include <span>
 #include <unordered_map>
 #include <vector>
@@ -17,7 +19,7 @@ struct PoolSizeRatio {
 	float ratio;
 };
 
-class DescriptorPool {
+class DescriptorPool : public NonCopyable {
 public:
 	DescriptorPool(Device& device, uint32_t maxSets, std::span<PoolSizeRatio> poolSizeRatios);
 	~DescriptorPool();
@@ -37,9 +39,10 @@ private:
 	VkDescriptorPool _descriptorPool;
 };
 
-class DescriptorLayoutBuilder {
+class DescriptorLayoutBuilder : public NonCopyable {
 public:
 	DescriptorLayoutBuilder(Device& device);
+    ~DescriptorLayoutBuilder() { flushLayouts(); }
 
 	// @brief Adds a binding and descriptor type to the descriptor layout builder
 	// @param binding - Which binding position to assign this to
@@ -54,13 +57,19 @@ public:
 	// @brief Builds a descriptor set layout with the current bindings
 	VkDescriptorSetLayout build();
 
+    // @brief Call destroy on all the descriptor set layouts created
+    void flushLayouts();
+
 private:
 	Device& _device;
 	std::vector<VkDescriptorSetLayoutBinding> _bindings;
+
+    // Store the created descriptor set layouts so that they can be destroyed at program shutdown
+    std::vector<VkDescriptorSetLayout> _layoutDeletionQueue;
 };
 
 // DescriptorWriter is for binding and writing the data to the GPU
-class DescriptorWriter {
+class DescriptorWriter : public NonCopyable {
 public:
 	DescriptorWriter(Device& device);
 

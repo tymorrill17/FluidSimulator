@@ -1,4 +1,5 @@
 #pragma once
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
@@ -9,6 +10,7 @@
 #include <vector>
 #include <iostream>
 #include "imgui/imgui_impl_sdl2.h"
+#include "vulkan/vulkan_core.h"
 
 // @brief Contains the window that will display the application
 class Window : public NonCopyable {
@@ -30,7 +32,7 @@ public:
 
     // @brief Create the Vulkan surface that will communicate with the SDL window. Called in Device constructor
     // @param instance - Vulkan instance to associate the surface with
-    void createSurface(VkInstance instance);
+    VkSurfaceKHR createSurface(VkInstance instance);
 
     // @brief Signals that the window should close
 	void closeWindow() { _windowShouldClose = true; }

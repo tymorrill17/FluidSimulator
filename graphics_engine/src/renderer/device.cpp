@@ -1,6 +1,7 @@
 #include "renderer/device.h"
 #include "renderer/queue_family.h"
 #include "renderer/swapchain.h"
+#include "vulkan/vulkan_core.h"
 #include <iostream>
 
 static VkPhysicalDeviceFeatures deviceFeatures{};
@@ -19,10 +20,12 @@ Device::Device(Instance& instance, Window& window, const std::vector<const char*
 	_physDevice(VK_NULL_HANDLE),
 	_logicalDevice(VK_NULL_HANDLE),
 	_graphQueue(VK_NULL_HANDLE),
-	_presQueue(VK_NULL_HANDLE) {
+	_presQueue(VK_NULL_HANDLE),
+    _windowSurface(VK_NULL_HANDLE) {
 
-	// Create the surface for the passed-in window. I don't necessarily like it being here, but we are keeping window creation separate from the engine, so this has to be here for now.
-	_window.createSurface(_instance.handle());
+	// Create the surface for the passed-in window. I don't necessarily like it being here, but we are keeping window creation separate from the engine
+    // and the surface needs an instance to be created
+	_windowSurface = _window.createSurface(_instance.handle());
 
 	// Select the physical device to be used for rendering
 	_physDevice = selectPhysicalDevice(_instance.handle(), _window.surface(), extensions);
@@ -78,6 +81,9 @@ Device::Device(Instance& instance, Window& window, const std::vector<const char*
 }
 
 Device::~Device() {
+	if (_windowSurface) {
+		vkDestroySurfaceKHR(_instance.handle(), _windowSurface, nullptr);
+	}
 	vkDestroyDevice(_logicalDevice, nullptr);
 }
 
