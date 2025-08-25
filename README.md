@@ -11,7 +11,7 @@ I want to learn about and play with particle-based fluid simulation techniques t
 After a long time developing a more general-purpose rendering engine, I finally have a starting point for this project. Using Dear ImGui for the debug windows, I have an interface to interact with important parameters.
 Currently, the particles are just given a random initial velocity with gravity acting on them and basic collision with the walls of the window.
 
-![Demonstration of Interactive Window](pics/Milestone1-InteractiveParticleSystem.gif)
+![Demonstration of Interactive Window](docs/pics/Milestone1-InteractiveParticleSystem.gif)
 
 Next step is to apply basic collision detection between the particles.
 
@@ -45,4 +45,4 @@ $h \rightarrow$ interaction radius, and
 $S \rightarrow$ interaction strength constant
 
 
-![Demonstration of Mouse Interaction and Particle Collisions](pics/Milestone2-ParticleCollisions.gif)
+![Demonstration of Mouse Interaction and Particle Collisions](docs/pics/Milestone2-ParticleCollisions.gif)
