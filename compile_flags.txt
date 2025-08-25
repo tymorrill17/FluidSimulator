@@ -1,8 +1,0 @@
-// This is for neovim LSP support only.. You must enter the path to the root folder in <root-dir-path> below and DELETE THIS COMMENT or it won't work
--std=c++23
--xc++
--IC:/VulkanSDK/1.4.309.0/Include
--I<root-dir-path>/include/
--I<root-dir-path>/graphics_engine/include/
--I<root-dir-path>/graphics_engine/dependencies/
-
